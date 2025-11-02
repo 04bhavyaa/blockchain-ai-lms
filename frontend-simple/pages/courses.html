@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Courses - Web3 LMS</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/courses.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <div class="container">
+    <div class="courses-header">
+      <h1>Explore Courses</h1>
+      <p>Discover and enroll in high-quality courses</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="card filters-card">
+      <div class="filters-grid">
+        <input type="text" id="search" placeholder="Search courses..." onkeyup="filterCourses()">
+        <select id="difficulty" onchange="filterCourses()">
+          <option value="">All Difficulty Levels</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Courses Grid -->
+    <div class="courses-grid" id="courses-container"></div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script src="../js/courses.js"></script>
+  <script>
+    let allCourses = [];
+
+    async function loadCoursesForFilter() {
+      try {
+        checkAuth();
+        showLoading(true);
+        allCourses = await api.getCourses();
+        displayCourses(allCourses);
+      } catch (error) {
+        showNotification('Failed to load courses: ' + error.message, 'error');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function filterCourses() {
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      const difficulty = document.getElementById('difficulty').value;
+
+      const filtered = allCourses.filter(course => {
+        const matchesSearch = course.title.toLowerCase().includes(searchTerm);
+        const matchesDifficulty = !difficulty || course.difficulty_level === difficulty;
+        return matchesSearch && matchesDifficulty;
+      });
+
+      displayCourses(filtered);
+    }
+
+    window.addEventListener('load', loadCoursesForFilter);
+  </script>
+</body>
+</html>
