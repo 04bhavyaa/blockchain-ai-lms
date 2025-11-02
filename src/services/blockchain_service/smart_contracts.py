@@ -7,7 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 # ERC20 Token Contract ABI (Standard)
 ERC20_ABI = [
     {
@@ -102,40 +101,32 @@ ERC721_ABI = [
     }
 ]
 
-
 class SmartContractManager:
     """Manage smart contract deployments and configurations"""
-    
+
     @staticmethod
     def get_token_contract():
         """Get ERC20 token contract config"""
         try:
-            return SmartContractConfig.objects.get(
-                contract_type='token',
-                is_active=True
-            )
+            return SmartContractConfig.objects.get(contract_type='token', is_active=True)
         except SmartContractConfig.DoesNotExist:
             logger.error("Token contract not deployed")
             return None
-    
+
     @staticmethod
     def get_certificate_contract():
         """Get ERC721 certificate contract config"""
         try:
-            return SmartContractConfig.objects.get(
-                contract_type='certificate',
-                is_active=True
-            )
+            return SmartContractConfig.objects.get(contract_type='certificate', is_active=True)
         except SmartContractConfig.DoesNotExist:
             logger.error("Certificate contract not deployed")
             return None
-    
+
     @staticmethod
     def save_contract_config(contract_type, contract_address, deployment_hash, block_number):
         """Save deployed contract configuration"""
         try:
             abi = ERC20_ABI if contract_type == 'token' else ERC721_ABI
-            
             config, created = SmartContractConfig.objects.update_or_create(
                 contract_type=contract_type,
                 defaults={
@@ -146,17 +137,15 @@ class SmartContractManager:
                     'is_active': True,
                 }
             )
-            
             logger.info(
                 f"Contract config {'created' if created else 'updated'}: "
                 f"{contract_type} - {contract_address}"
             )
             return config
-        
         except Exception as e:
             logger.error(f"Error saving contract config: {str(e)}")
             return None
-    
+
     @staticmethod
     def get_abi_for_type(contract_type):
         """Get ABI for contract type"""

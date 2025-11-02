@@ -27,7 +27,7 @@ class AdminDashboardLog(models.Model):
         ('settings_updated', 'Settings Updated'),
     ]
     
-    admin_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='admin_logs')
+    admin_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_logs')
     action_type = models.CharField(max_length=50, choices=ACTION_TYPES)
     target_type = models.CharField(max_length=50)  # 'user', 'course', 'payment', etc.
     target_id = models.IntegerField()
@@ -69,7 +69,7 @@ class FraudDetectionLog(models.Model):
         ('bot_activity', 'Bot Activity'),
     ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='fraud_logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='fraud_logs')
     fraud_type = models.CharField(max_length=50, choices=FRAUD_TYPES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     severity = models.CharField(
@@ -79,13 +79,7 @@ class FraudDetectionLog(models.Model):
     )
     description = models.TextField()
     evidence = models.JSONField(default=dict)
-    reviewed_by = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,
-        related_name='reviewed_frauds'
-    )
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='fraud_reviewed')
     action_taken = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -118,7 +112,7 @@ class AdminSettings(models.Model):
     setting_type = models.CharField(max_length=50, choices=SETTING_TYPES)
     value = models.JSONField()
     description = models.TextField(blank=True)
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_settings')
+    last_updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_settings')
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:

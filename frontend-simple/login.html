@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <div class="navbar-links">
+                <a href="index.html" class="navbar-link">Home</a>
+                <a href="register.html" class="navbar-link">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Form -->
+    <section class="section" style="padding-top: 120px; min-height: calc(100vh - 80px);">
+        <div class="container">
+            <div class="form-container">
+                <h2 class="text-center mb-md">Welcome Back</h2>
+                <p class="text-center mb-lg" style="color: var(--text-secondary);">
+                    Sign in to continue your learning journey
+                </p>
+
+                <!-- Alert Messages -->
+                <div id="alert-container"></div>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="you@example.com"
+                            required
+                            autocomplete="email"
+                        >
+                        <span class="form-error" id="email-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <span class="form-error" id="password-error"></span>
+                    </div>
+
+                    <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="remember" style="margin-right: 8px;">
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Remember me</span>
+                        </label>
+                        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                            <a href="#" id="resend-verification-link" style="font-size: 0.9rem;">Resend Verification</a>
+                            <span style="color: var(--text-muted);">|</span>
+                            <a href="#" id="forgot-password-link" style="font-size: 0.9rem;">Forgot password?</a>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="login-btn" style="width: 100%; margin-top: var(--spacing-md);">
+                        Sign In
+                    </button>
+                </form>
+
+                <p class="text-center mt-md" style="color: var(--text-secondary);">
+                    Don't have an account? 
+                    <a href="register.html" style="color: var(--accent-primary);">Sign up here</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Check if already logged in
+        if (window.utils && window.utils.isAuthenticated()) {
+            window.utils.redirectTo('dashboard.html');
+        }
+
+        // Initialize login form
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('login-form');
+            if (form && window.handleLogin) {
+                form.addEventListener('submit', window.handleLogin);
+            }
+
+            // Forgot password link
+            const forgotLink = document.getElementById('forgot-password-link');
+            if (forgotLink) {
+                forgotLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const email = prompt('Enter your email address:');
+                    if (email && window.utils.validateEmail(email)) {
+                        handleForgotPassword(email);
+                    } else if (email) {
+                        alert('Please enter a valid email address');
+                    }
+                });
+            }
+
+            // Resend verification link
+            const resendVerificationLink = document.getElementById('resend-verification-link');
+            if (resendVerificationLink) {
+                resendVerificationLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const email = prompt('Enter your email address to resend verification:');
+                    if (email && window.utils.validateEmail(email)) {
+                        handleResendVerification(email);
+                    } else if (email) {
+                        alert('Please enter a valid email address');
+                    }
+                });
+            }
+        });
+
+        async function handleForgotPassword(email) {
+            try {
+                const response = await window.api.forgotPassword(email);
+                showAlert('success', 'Password reset link has been sent to your email.');
+            } catch (error) {
+                showAlert('error', error.message || 'Failed to send password reset email.');
+            }
+        }
+
+        async function handleResendVerification(email) {
+            try {
+                const response = await window.api.resendVerification(email);
+                showAlert('success', 'Verification email has been sent. Please check your inbox.');
+            } catch (error) {
+                showAlert('error', error.message || 'Failed to send verification email.');
+            }
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alert-container');
+            if (container) {
+                container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
+

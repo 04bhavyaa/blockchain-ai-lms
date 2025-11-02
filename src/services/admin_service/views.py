@@ -28,7 +28,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     """Admin user management endpoints"""
     
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
     
     def get_serializer_class(self):
         if self.action == 'list':
@@ -170,7 +170,7 @@ class AdminLogsViewSet(viewsets.ReadOnlyModelViewSet):
     
     queryset = AdminDashboardLog.objects.all()
     serializer_class = AdminDashboardLogSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
     
     def list(self, request, *args, **kwargs):
         """List admin logs with filters"""
@@ -204,7 +204,7 @@ class FraudDetectionViewSet(viewsets.ModelViewSet):
     
     queryset = FraudDetectionLog.objects.all()
     serializer_class = FraudDetectionLogSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
     
     def list(self, request, *args, **kwargs):
         """List fraud cases with filters"""
@@ -268,7 +268,7 @@ class AdminSettingsViewSet(viewsets.ModelViewSet):
     
     queryset = AdminSettings.objects.all()
     serializer_class = AdminSettingsSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
     lookup_field = 'setting_key'
     
     @action(detail=False, methods=['get'])
@@ -290,7 +290,7 @@ class AdminSettingsViewSet(viewsets.ModelViewSet):
         """Create new setting"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(updated_by=request.user)
+        serializer.save(last_updated_by=request.user)
         
         return Response(
             {'status': 'success', 'data': serializer.data},
@@ -303,7 +303,7 @@ class AdminSettingsViewSet(viewsets.ModelViewSet):
         setting = self.get_object()
         serializer = self.get_serializer(setting, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save(updated_by=request.user)
+        serializer.save(last_updated_by=request.user)
         
         return Response({'status': 'success', 'data': serializer.data})
 
@@ -311,35 +311,78 @@ class AdminSettingsViewSet(viewsets.ModelViewSet):
 class DashboardStatsViewSet(viewsets.ViewSet):
     """Dashboard statistics endpoint"""
     
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsAdminUser])
     def overview(self, request):
-        """Get dashboard overview stats"""
+        """Get dashboard overview stats - calculated in real-time"""
+        from django.db.models import Count, Sum, Q
+        from django.utils import timezone
+        from datetime import timedelta
+        from src.services.courses_service.models import Course, Enrollment
+        from src.services.blockchain_service.models import Certificate
+        from src.services.payment_service.models import StripePurchase
         
-        # Get latest metrics
-        latest_metrics = SystemMetrics.objects.latest('recorded_at')
-        
-        # Count pending items
-        from src.services.progress_service.models import Certificate
-        pending_certs = Certificate.objects.filter(status='pending').count()
-        
-        pending_fraud = FraudDetectionLog.objects.filter(status='pending').count()
-        
-        # Recent logs
-        recent_logs = AdminDashboardLog.objects.all()[:10]
-        
-        data = {
-            'total_users': latest_metrics.total_users,
-            'active_users_today': latest_metrics.active_users_today,
-            'total_courses': latest_metrics.total_courses,
-            'total_enrollments': latest_metrics.total_enrollments,
-            'total_tokens_distributed': str(latest_metrics.total_tokens_distributed),
-            'total_revenue': str(latest_metrics.total_revenue),
-            'pending_fraud_cases': pending_fraud,
-            'pending_certificates': pending_certs,
-            'recent_logs': AdminDashboardLogSerializer(recent_logs, many=True).data
-        }
-        
-        serializer = DashboardStatsSerializer(data)
-        return Response({'status': 'success', 'data': serializer.data})
+        try:
+            # Calculate stats in real-time from actual data
+            total_users = User.objects.count()
+            
+            # Active users (logged in today)
+            today = timezone.now().date()
+            active_users_today = User.objects.filter(
+                last_login__date=today
+            ).count()
+            
+            total_courses = Course.objects.filter(status='published').count()
+            total_enrollments = Enrollment.objects.count()
+            
+            # Calculate tokens distributed from course progress
+            from src.services.progress_service.models import CourseProgress
+            total_tokens_distributed = CourseProgress.objects.aggregate(
+                total=Sum('tokens_earned')
+            )['total'] or 0
+            
+            # Calculate revenue from successful payments
+            total_revenue = StripePurchase.objects.filter(
+                status='succeeded'
+            ).aggregate(
+                total=Sum('amount_usd')
+            )['total'] or 0
+            
+            # Count pending items
+            pending_certs = Certificate.objects.filter(status='pending').count()
+            pending_fraud = FraudDetectionLog.objects.filter(status='pending').count()
+            
+            # Recent logs
+            recent_logs = AdminDashboardLog.objects.all()[:10]
+            
+            data = {
+                'total_users': total_users,
+                'active_users_today': active_users_today,
+                'total_courses': total_courses,
+                'total_enrollments': total_enrollments,
+                'total_tokens_distributed': str(int(total_tokens_distributed)),
+                'total_revenue': str(float(total_revenue)),
+                'pending_fraud_cases': pending_fraud,
+                'pending_certificates': pending_certs,
+                'recent_logs': AdminDashboardLogSerializer(recent_logs, many=True).data
+            }
+            
+            serializer = DashboardStatsSerializer(data)
+            return Response({'status': 'success', 'data': serializer.data})
+        except Exception as e:
+            logger.error(f"Error calculating dashboard stats: {str(e)}", exc_info=True)
+            # Return defaults on error
+            data = {
+                'total_users': 0,
+                'active_users_today': 0,
+                'total_courses': 0,
+                'total_enrollments': 0,
+                'total_tokens_distributed': '0',
+                'total_revenue': '0.00',
+                'pending_fraud_cases': 0,
+                'pending_certificates': 0,
+                'recent_logs': []
+            }
+            serializer = DashboardStatsSerializer(data)
+            return Response({'status': 'success', 'data': serializer.data})

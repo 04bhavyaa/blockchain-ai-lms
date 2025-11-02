@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .chatbot-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: var(--spacing-lg);
+            height: calc(100vh - 80px);
+        }
+
+        .conversations-sidebar {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .conversations-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .conversation-item {
+            padding: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .conversation-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .conversation-item.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .conversation-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .conversation-preview {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .message {
+            display: flex;
+            gap: var(--spacing-sm);
+            max-width: 80%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .message-content {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .message.user .message-content {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: var(--spacing-xs);
+        }
+
+        .chat-input-container {
+            padding: var(--spacing-md);
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-primary);
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        @media (max-width: 768px) {
+            .chatbot-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .conversations-sidebar {
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <div class="navbar-links">
+                <a href="dashboard.html" class="navbar-link">Dashboard</a>
+                <a href="courses.html" class="navbar-link">Courses</a>
+                <a href="chatbot.html" class="navbar-link active">Chatbot</a>
+                <a href="profile.html" class="navbar-link">Profile</a>
+                <button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: var(--spacing-sm);">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Chatbot Container -->
+    <div class="chatbot-container">
+        <!-- Conversations Sidebar -->
+        <div class="conversations-sidebar">
+            <div class="conversations-header">
+                <h3 style="margin: 0;">Conversations</h3>
+                <button class="btn btn-primary" onclick="createNewConversation()" style="padding: var(--spacing-xs) var(--spacing-sm); font-size: 0.85rem;">+ New</button>
+            </div>
+            <div id="conversations-list">
+                <div class="loading" style="display: flex; justify-content: center; padding: var(--spacing-xl);">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Main -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2 id="conversation-title" style="margin: 0;">Select or create a conversation</h2>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div style="text-align: center; color: var(--text-secondary); padding: var(--spacing-xl);">
+                    Start a conversation by selecting one from the sidebar or creating a new one.
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <form id="chat-form" onsubmit="handleSendMessage(event)">
+                    <div class="chat-input-form">
+                        <input 
+                            type="text" 
+                            id="message-input" 
+                            class="chat-input" 
+                            placeholder="Type your message..." 
+                            disabled
+                            required
+                        >
+                        <button type="submit" class="btn btn-primary" id="send-btn" disabled>Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chatbot.js"></script>
+    <script>
+        // Check authentication
+        if (!window.utils || !window.utils.isAuthenticated()) {
+            window.utils.redirectTo('login.html');
+        }
+    </script>
+</body>
+</html>
+

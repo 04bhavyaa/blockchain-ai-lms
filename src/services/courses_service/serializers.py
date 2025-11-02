@@ -8,7 +8,6 @@ from .models import (
     Enrollment, CourseRating, Bookmark
 )
 
-
 class AnswerSerializer(serializers.ModelSerializer):
     """Answer serializer for multiple choice"""
     
@@ -87,8 +86,6 @@ class CourseCategorySerializer(serializers.ModelSerializer):
 
 
 class CourseDetailedSerializer(serializers.ModelSerializer):
-    """Detailed course serializer with all nested content"""
-    
     modules = ModuleSerializer(many=True, read_only=True)
     category = CourseCategorySerializer(read_only=True)
     instructor_name = serializers.CharField(source='instructor.get_full_name', read_only=True)
@@ -96,7 +93,10 @@ class CourseDetailedSerializer(serializers.ModelSerializer):
     is_enrolled = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField()
     user_progress = serializers.SerializerMethodField()
-    
+    blockchain_unlock_callback = serializers.CharField(read_only=True)
+    certificate_mint_callback = serializers.CharField(read_only=True)
+    last_blockchain_event = serializers.CharField(read_only=True)
+
     class Meta:
         model = Course
         fields = [
@@ -106,9 +106,14 @@ class CourseDetailedSerializer(serializers.ModelSerializer):
             'duration_hours', 'status', 'is_featured', 'tags',
             'learning_objectives', 'total_enrollments', 'average_rating',
             'total_ratings', 'modules', 'total_modules', 'is_enrolled',
-            'is_bookmarked', 'user_progress', 'created_at', 'updated_at'
+            'is_bookmarked', 'user_progress', 'blockchain_unlock_callback',
+            'certificate_mint_callback', 'last_blockchain_event',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 'created_at', 'updated_at', 'blockchain_unlock_callback',
+            'certificate_mint_callback', 'last_blockchain_event'
+        ]
     
     def get_total_modules(self, obj):
         return obj.modules.count()
@@ -141,32 +146,36 @@ class CourseDetailedSerializer(serializers.ModelSerializer):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    """Simplified course serializer for list view"""
-    
     category_name = serializers.CharField(source='category.name', read_only=True)
     instructor_name = serializers.CharField(source='instructor.get_full_name', read_only=True)
-    
+    blockchain_unlock_callback = serializers.CharField(read_only=True)
+
     class Meta:
         model = Course
         fields = [
             'id', 'title', 'slug', 'category', 'category_name', 'instructor_name',
             'access_type', 'thumbnail_url', 'difficulty_level', 'duration_hours',
-            'average_rating', 'total_enrollments'
+            'average_rating', 'total_enrollments', 'blockchain_unlock_callback'
         ]
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    """Enrollment serializer"""
-    
     course_title = serializers.CharField(source='course.title', read_only=True)
-    
+    blockchain_unlock_tx_hash = serializers.CharField(read_only=True)
+    blockchain_certificate_tx_hash = serializers.CharField(read_only=True)
+    last_blockchain_status = serializers.CharField(read_only=True)
+
     class Meta:
         model = Enrollment
         fields = [
-            'id', 'course', 'course_title', 'status', 'enrolled_at',
-            'completed_at', 'progress_percentage', 'lessons_completed'
+            'id', 'course', 'course_title', 'status', 'enrolled_at', 'completed_at',
+            'progress_percentage', 'lessons_completed', 'certificate_issued',
+            'blockchain_unlock_tx_hash', 'blockchain_certificate_tx_hash', 'last_blockchain_status'
         ]
-        read_only_fields = ['id', 'enrolled_at', 'completed_at']
+        read_only_fields = [
+            'id', 'enrolled_at', 'completed_at', 'blockchain_unlock_tx_hash',
+            'blockchain_certificate_tx_hash', 'last_blockchain_status'
+        ]
 
 
 class CourseRatingSerializer(serializers.ModelSerializer):

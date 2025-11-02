@@ -42,23 +42,66 @@ class RecommendationViewSet(viewsets.ViewSet):
             engine = HybridRecommendationEngine(request.user)
             recommendations = engine.get_recommendations(limit=limit)
             
-            # Enrich recommendations with course details
+            # Use actual Course model to ensure valid courses
+            from src.services.courses_service.models import Course
+            
+            # Enrich recommendations with course details from actual Course model
             enriched_recs = []
             for rec in recommendations:
                 try:
-                    course = CourseVector.objects.get(course_id=rec['course_id'])
+                    course = Course.objects.get(id=rec['course_id'], status='published')
                     enriched_recs.append({
-                        'course_id': course.course_id,
-                        'course_name': course.course_name,
-                        'category': course.category,
+                        'id': course.id,
+                        'course_id': course.id,
+                        'title': course.title,
+                        'course_name': course.title,
+                        'description': course.description,
+                        'thumbnail_url': course.thumbnail_url,
+                        'category': course.category.name if course.category else '',
                         'difficulty_level': course.difficulty_level,
+                        'access_type': course.access_type,
+                        'token_cost': course.token_cost,
+                        'price_usd': float(course.price_usd),
                         'score': rec['score'],
-                        'avg_rating': float(course.avg_rating),
+                        'average_rating': float(course.average_rating),
+                        'avg_rating': float(course.average_rating),
                         'total_enrollments': course.total_enrollments,
+                        'is_featured': course.is_featured,
                         'match_percentage': round(float(rec['score']) * 100, 2),
                     })
-                except CourseVector.DoesNotExist:
+                except (Course.DoesNotExist, KeyError, ValueError):
                     continue
+            
+            # If no recommendations, fallback to popular/featured courses
+            if len(enriched_recs) == 0:
+                logger.info("No recommendations found, falling back to popular courses")
+                try:
+                    fallback_courses = Course.objects.filter(
+                        status='published'
+                    ).order_by('-is_featured', '-total_enrollments', '-average_rating')[:limit]
+                    
+                    for course in fallback_courses:
+                        enriched_recs.append({
+                            'id': course.id,
+                            'course_id': course.id,
+                            'title': course.title,
+                            'course_name': course.title,
+                            'description': course.description,
+                            'thumbnail_url': course.thumbnail_url,
+                            'category': course.category.name if course.category else '',
+                            'difficulty_level': course.difficulty_level,
+                            'access_type': course.access_type,
+                            'token_cost': course.token_cost,
+                            'price_usd': float(course.price_usd),
+                            'score': 0.5,  # Default score for fallback
+                            'average_rating': float(course.average_rating),
+                            'avg_rating': float(course.average_rating),
+                            'total_enrollments': course.total_enrollments,
+                            'is_featured': course.is_featured,
+                            'match_percentage': 50.0,
+                        })
+                except Exception as fallback_error:
+                    logger.error(f"Fallback recommendations failed: {str(fallback_error)}")
             
             return Response({
                 'status': 'success',
@@ -68,45 +111,158 @@ class RecommendationViewSet(viewsets.ViewSet):
         
         except Exception as e:
             logger.error(f"Error in recommendations: {str(e)}", exc_info=True)
-            return Response(
-                {'status': 'error', 'message': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # Try fallback before returning error
+            try:
+                from src.services.courses_service.models import Course
+                fallback_courses = Course.objects.filter(
+                    status='published'
+                ).order_by('-is_featured', '-total_enrollments')[:limit]
+                
+                data = [{
+                    'id': c.id,
+                    'course_id': c.id,
+                    'title': c.title,
+                    'course_name': c.title,
+                    'description': c.description,
+                    'thumbnail_url': c.thumbnail_url,
+                    'category': c.category.name if c.category else '',
+                    'difficulty_level': c.difficulty_level,
+                    'access_type': c.access_type,
+                    'average_rating': float(c.average_rating),
+                    'total_enrollments': c.total_enrollments,
+                    'is_featured': c.is_featured,
+                } for c in fallback_courses]
+                
+                return Response({
+                    'status': 'success',
+                    'count': len(data),
+                    'data': data
+                })
+            except:
+                return Response(
+                    {'status': 'error', 'message': str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
     
     @action(detail=False, methods=['get'])
     def trending(self, request):
-        """Get trending courses"""
+        """Get trending courses - use actual Course model to ensure valid IDs"""
         
         limit = int(request.query_params.get('limit', 10))
         
-        # Courses trending in last 7 days
-        seven_days_ago = timezone.now() - timedelta(days=7)
-        
-        trending = CourseVector.objects.filter(
-            updated_at__gte=seven_days_ago
-        ).annotate(
-            recent_enrollments=Count(
-                'usercoursinteraction',
-                filter=Q(usercoursinteraction__created_at__gte=seven_days_ago)
-            )
-        ).order_by('-recent_enrollments')[:limit]
-        
-        serializer = TrendingCourseSerializer(
-            [{
-                'course_id': course.course_id,
-                'course_name': course.course_name,
-                'total_enrollments': course.total_enrollments,
-                'avg_rating': float(course.avg_rating),
-                'trend_score': course.completion_rate,
-            } for course in trending],
-            many=True
-        )
-        
-        return Response({
-            'status': 'success',
-            'count': len(serializer.data),
-            'data': serializer.data
-        })
+        try:
+            # Use actual Course model instead of CourseVector to ensure valid IDs
+            from src.services.courses_service.models import Course
+            
+            # Try to get trending from recent interactions
+            seven_days_ago = timezone.now() - timedelta(days=7)
+            from .models import UserCourseInteraction
+            
+            # Get course IDs with recent interactions
+            recent_interactions = UserCourseInteraction.objects.filter(
+                created_at__gte=seven_days_ago,
+                interaction_type__in=['enroll', 'complete', 'rate']
+            ).values('course_id').annotate(
+                interaction_count=Count('id')
+            ).order_by('-interaction_count')[:limit * 2]
+            
+            trending_course_ids = [item['course_id'] for item in recent_interactions if item['course_id']]
+            
+            # Filter to only existing courses
+            if trending_course_ids:
+                existing_course_ids = Course.objects.filter(
+                    id__in=trending_course_ids,
+                    status='published'
+                ).values_list('id', flat=True)
+                trending_course_ids = list(existing_course_ids)
+            
+            # Get trending courses from actual Course model
+            if trending_course_ids:
+                trending_courses = Course.objects.filter(
+                    id__in=trending_course_ids,
+                    status='published'
+                ).order_by('-total_enrollments', '-average_rating')[:limit]
+                
+                # If not enough, add popular courses
+                if trending_courses.count() < limit:
+                    remaining = limit - trending_courses.count()
+                    additional = Course.objects.filter(
+                        status='published'
+                    ).exclude(
+                        id__in=trending_course_ids
+                    ).order_by('-total_enrollments', '-average_rating')[:remaining]
+                    trending_courses = list(trending_courses) + list(additional)
+            else:
+                # No recent interactions, just get popular courses
+                trending_courses = Course.objects.filter(
+                    status='published'
+                ).order_by('-total_enrollments', '-average_rating')[:limit]
+            
+            # Convert to serializer format
+            data = []
+            for course in trending_courses:
+                data.append({
+                    'id': course.id,  # Use actual course ID
+                    'course_id': course.id,
+                    'title': course.title,
+                    'course_name': course.title,
+                    'description': course.description,
+                    'thumbnail_url': course.thumbnail_url,
+                    'category': course.category.name if course.category else '',
+                    'difficulty_level': course.difficulty_level,
+                    'access_type': course.access_type,
+                    'token_cost': course.token_cost,
+                    'price_usd': float(course.price_usd),
+                    'total_enrollments': course.total_enrollments,
+                    'average_rating': float(course.average_rating),
+                    'is_featured': course.is_featured,
+                    'trend_score': float(course.total_enrollments) / 10.0,  # Simple trend score
+                })
+            
+            return Response({
+                'status': 'success',
+                'count': len(data),
+                'data': data
+            })
+        except Exception as e:
+            logger.error(f"Error getting trending courses: {str(e)}", exc_info=True)
+            # Fallback: get popular published courses
+            try:
+                from src.services.courses_service.models import Course
+                fallback_courses = Course.objects.filter(
+                    status='published'
+                ).order_by('-total_enrollments', '-average_rating')[:limit]
+                
+                data = [{
+                    'id': c.id,
+                    'course_id': c.id,
+                    'title': c.title,
+                    'course_name': c.title,
+                    'description': c.description,
+                    'thumbnail_url': c.thumbnail_url,
+                    'category': c.category.name if c.category else '',
+                    'difficulty_level': c.difficulty_level,
+                    'access_type': c.access_type,
+                    'token_cost': c.token_cost,
+                    'price_usd': float(c.price_usd),
+                    'total_enrollments': c.total_enrollments,
+                    'average_rating': float(c.average_rating),
+                    'is_featured': c.is_featured,
+                    'trend_score': float(c.total_enrollments) / 10.0,
+                } for c in fallback_courses]
+                
+                return Response({
+                    'status': 'success',
+                    'count': len(data),
+                    'data': data
+                })
+            except Exception as fallback_error:
+                logger.error(f"Fallback also failed: {str(fallback_error)}")
+                return Response({
+                    'status': 'success',
+                    'count': 0,
+                    'data': []
+                })
     
     @action(detail=False, methods=['get'])
     def similar(self, request):

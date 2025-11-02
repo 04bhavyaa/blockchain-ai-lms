@@ -8,94 +8,60 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = get_user_model()
 
-
 class CourseCategory(models.Model):
-    """Course categories for organization"""
-    
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(unique=True)
     description = models.TextField()
     icon_url = models.URLField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         db_table = 'course_categories'
         verbose_name_plural = 'Categories'
-    
+
     def __str__(self):
         return self.name
 
-
 class Course(models.Model):
-    """Course model"""
-    
     ACCESS_TYPES = [
         ('free', 'Free'),
         ('token', 'Token Required'),
         ('paid', 'Paid'),
     ]
-    
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('published', 'Published'),
         ('archived', 'Archived'),
     ]
-    
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
     description = models.TextField()
-    category = models.ForeignKey(
-        CourseCategory,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='courses'
-    )
-    instructor = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='courses_taught'
-    )
+    category = models.ForeignKey(CourseCategory, on_delete=models.SET_NULL, null=True, related_name='courses')
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses_taught')
     access_type = models.CharField(max_length=20, choices=ACCESS_TYPES, default='free')
-    token_cost = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-        help_text="Tokens required to unlock course"
-    )
-    price_usd = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0)]
-    )
+    token_cost = models.IntegerField(default=0, validators=[MinValueValidator(0)], help_text="Tokens required to unlock course")
+    price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     thumbnail_url = models.URLField(null=True, blank=True)
     cover_image_url = models.URLField(null=True, blank=True)
-    difficulty_level = models.CharField(
-        max_length=20,
-        choices=[('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')],
-        default='beginner'
-    )
-    duration_hours = models.IntegerField(
-        validators=[MinValueValidator(1)],
-        default=10
-    )
+    difficulty_level = models.CharField(max_length=20, choices=[('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')], default='beginner')
+    duration_hours = models.IntegerField(validators=[MinValueValidator(1)], default=10)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     is_featured = models.BooleanField(default=False)
     tags = models.JSONField(default=list)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True)
     learning_objectives = models.JSONField(default=list)
     total_enrollments = models.IntegerField(default=0)
-    average_rating = models.DecimalField(
-        max_digits=3,
-        decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
-    )
+    average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
     total_ratings = models.IntegerField(default=0)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses_created')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
-    
+    # Blockchain integration fields
+    blockchain_unlock_callback = models.URLField(null=True, blank=True, help_text="Webhook/callback for successful token payment unlock events (from blockchain service)")
+    certificate_mint_callback = models.URLField(null=True, blank=True, help_text="URL to hit after certificate is minted (for async notifications/LMS update)")
+    last_blockchain_event = models.TextField(blank=True, help_text="Last blockchain event message/notification")
+
     class Meta:
         db_table = 'courses'
         ordering = ['-created_at']
@@ -104,7 +70,7 @@ class Course(models.Model):
             models.Index(fields=['category']),
             models.Index(fields=['slug']),
         ]
-    
+
     def __str__(self):
         return self.title
 
@@ -237,28 +203,25 @@ class Answer(models.Model):
 
 
 class Enrollment(models.Model):
-    """Course enrollment tracking"""
-    
     STATUS_CHOICES = [
         ('enrolled', 'Enrolled'),
         ('completed', 'Completed'),
         ('dropped', 'Dropped'),
+        ('pending_blockchain', 'Pending Blockchain Unlock'),
     ]
-    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='enrolled')
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    progress_percentage = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
-    )
+    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     lessons_completed = models.IntegerField(default=0)
     certificate_issued = models.BooleanField(default=False)
-    
+    # Blockchain unlock/mint logs
+    blockchain_unlock_tx_hash = models.CharField(max_length=255, null=True, blank=True)
+    blockchain_certificate_tx_hash = models.CharField(max_length=255, null=True, blank=True)
+    last_blockchain_status = models.TextField(blank=True)
+
     class Meta:
         db_table = 'enrollments'
         unique_together = ['user', 'course']
@@ -267,7 +230,7 @@ class Enrollment(models.Model):
             models.Index(fields=['user', '-enrolled_at']),
             models.Index(fields=['course', 'status']),
         ]
-    
+
     def __str__(self):
         return f"{self.user.email} - {self.course.title}"
 

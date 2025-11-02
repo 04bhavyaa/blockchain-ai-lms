@@ -1,36 +1,123 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web3 LMS - Learn with Blockchain</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain AI LMS - Next-Gen Learning Platform</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <h1>🎓 Web3 LMS</h1>
-        <p>Learn with Blockchain Technology</p>
-      </div>
-      
-      <div style="text-align: center; padding: 2rem 0;">
-        <p>Redirecting to login...</p>
-        <p style="font-size: 0.875rem; color: #6b7280;">If not redirected, <a href="pages/login.html">click here</a></p>
-      </div>
-    </div>
-  </div>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <div class="navbar-links">
+                <a href="#features" class="navbar-link">Features</a>
+                <a href="login.html" class="navbar-link">Login</a>
+                <a href="register.html" class="btn btn-primary">Get Started</a>
+            </div>
+        </div>
+    </nav>
 
-  <script>
-    // Redirect to login or dashboard based on auth status
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      window.location.href = '/pages/dashboard.html';
-    } else {
-      window.location.href = '/pages/login.html';
-    }
-  </script>
-  <link rel="stylesheet" href="css/auth.css">
+    <!-- Landing Hero Section -->
+    <section class="landing">
+        <div class="landing-hero">
+            <h1 class="landing-title">Learn, Earn & Verify</h1>
+            <p class="landing-subtitle">
+                Experience next-generation learning with AI-powered recommendations, 
+                blockchain-verified certificates, and token-based rewards. 
+                Build skills that matter in the decentralized future.
+            </p>
+            <div class="landing-cta">
+                <a href="register.html" class="btn btn-primary">Start Learning Free</a>
+                <a href="login.html" class="btn btn-secondary">Sign In</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="text-center mb-lg">Platform Features</h2>
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI-Powered Recommendations</h3>
+                    <p class="feature-description">
+                        Personalized learning paths tailored to your goals, progress, and preferences. 
+                        Discover courses that match your learning style.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🔗</div>
+                    <h3 class="feature-title">Blockchain Certificates</h3>
+                    <p class="feature-description">
+                        Globally verifiable, tamper-proof credentials stored on-chain. 
+                        Your achievements are permanently recorded and recognized worldwide.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">💎</div>
+                    <h3 class="feature-title">Token Rewards</h3>
+                    <p class="feature-description">
+                        Earn learning tokens for completing courses, quizzes, and milestones. 
+                        Use tokens to unlock premium content and courses.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Progress Tracking</h3>
+                    <p class="feature-description">
+                        Real-time dashboards showing your enrolled courses, completion stats, 
+                        learning streaks, and earned achievements.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">💳</div>
+                    <h3 class="feature-title">Flexible Payments</h3>
+                    <p class="feature-description">
+                        Purchase premium courses via Stripe or blockchain payments. 
+                        Support multiple payment methods for seamless access.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🎓</div>
+                    <h3 class="feature-title">Expert Instructors</h3>
+                    <p class="feature-description">
+                        Learn from industry experts and verified educators. 
+                        Access high-quality content curated by professionals.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section" style="background: var(--bg-secondary);">
+        <div class="container text-center">
+            <h2>Ready to Start Learning?</h2>
+            <p class="landing-subtitle" style="margin-bottom: var(--spacing-lg);">
+                Join thousands of learners building skills with blockchain-verified credentials.
+            </p>
+            <div class="landing-cta">
+                <a href="register.html" class="btn btn-primary">Create Free Account</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script>
+        // Redirect to dashboard if user is not admin
+        if (window.utils && window.utils.getUser() && window.utils.isAuthenticated()) {
+            window.utils.redirectTo('dashboard.html');
+        }
+    </script>
 </body>
 </html>
+

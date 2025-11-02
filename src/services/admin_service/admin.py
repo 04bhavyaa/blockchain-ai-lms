@@ -24,14 +24,14 @@ class FraudDetectionLogAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Basic Info', {'fields': ('user', 'fraud_type', 'severity')}),
         ('Details', {'fields': ('description', 'evidence')}),
-        ('Review', {'fields': ('status', 'reviewed_by', 'action_taken')}),
-        ('Timestamps', {'fields': ('created_at', 'updated_at', 'resolved_at')}),
+        ('Review', {'fields': ('reviewed_by', 'status', 'is_resolved', 'resolution_notes')}),
+        ('Timestamps', {'fields': ('created_at', 'updated_at')}),
     )
 
 
 @admin.register(AdminSettings)
 class AdminSettingsAdmin(admin.ModelAdmin):
-    list_display = ['setting_key', 'setting_type', 'updated_by', 'updated_at']
+    list_display = ['setting_key', 'setting_type', 'last_updated_by', 'updated_at']
     list_filter = ['setting_type', 'updated_at']
     search_fields = ['setting_key', 'description']
     readonly_fields = ['updated_at']

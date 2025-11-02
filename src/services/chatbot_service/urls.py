@@ -1,7 +1,3 @@
-"""
-Chatbot service URLs
-"""
-
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
@@ -19,4 +15,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('send/', ChatbotViewSet.as_view({'post': 'send_message'}), name='send-message'),
     path('conversations-list/', ChatbotViewSet.as_view({'get': 'conversations'}), name='conversations-list'),
+    # You can add: path('conversation/<str:session_id>/', ConversationViewSet.as_view({'get': 'retrieve'})) for direct session lookups.
 ]

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .courses-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px var(--spacing-md) var(--spacing-xl);
+        }
+
+        .courses-header {
+            margin-bottom: var(--spacing-xl);
+            text-align: center;
+        }
+
+        .courses-title {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .courses-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .filters-section {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .filters-row {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: var(--font-family);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .search-box {
+            flex: 2;
+            min-width: 250px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .course-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .course-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .course-thumbnail {
+            width: 100%;
+            height: 180px;
+            background: var(--bg-tertiary);
+            object-fit: cover;
+        }
+
+        .course-content {
+            padding: var(--spacing-md);
+        }
+
+        .course-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .course-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-sm);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--spacing-xl);
+        }
+
+        .course-meta {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .course-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--spacing-sm);
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .course-price {
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .course-free {
+            color: var(--success);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xl);
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--bg-hover);
+            border-color: var(--accent-primary);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-featured {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .badge-difficulty {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <div class="navbar-links">
+                <a href="dashboard.html" class="navbar-link">Dashboard</a>
+                <a href="courses.html" class="navbar-link">Courses</a>
+                <a href="chatbot.html" class="navbar-link">Chatbot</a>
+                <a href="profile.html" class="navbar-link">Profile</a>
+                <button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: var(--spacing-sm);">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Courses Content -->
+    <div class="courses-container">
+        <div class="courses-header">
+            <h1 class="courses-title">Explore Courses</h1>
+            <p class="courses-subtitle">Discover courses that match your learning goals</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="filter-group search-box">
+                    <label class="filter-label">Search Courses</label>
+                    <input type="text" id="search-input" class="search-input" placeholder="Search by title, description, or tags...">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Category</label>
+                    <select id="category-filter" class="filter-select">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Difficulty</label>
+                    <select id="difficulty-filter" class="filter-select">
+                        <option value="">All Levels</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Access Type</label>
+                    <select id="access-filter" class="filter-select">
+                        <option value="">All Types</option>
+                        <option value="free">Free</option>
+                        <option value="token">Token-based</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Sort By</label>
+                    <select id="sort-filter" class="filter-select">
+                        <option value="-created_at">Newest</option>
+                        <option value="total_enrollments">Most Popular</option>
+                        <option value="-average_rating">Highest Rated</option>
+                        <option value="created_at">Oldest</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses Grid -->
+        <div id="courses-container" class="courses-grid">
+            <div class="loading-spinner" style="grid-column: 1 / -1; display: flex; justify-content: center; padding: var(--spacing-xl);">
+                <div class="loading"></div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination-container" class="pagination"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/courses.js"></script>
+    <script>
+        // Log page initialization
+        console.log('[Courses Page] HTML loaded, scripts will initialize...');
+        
+        // Check authentication
+        if (!window.utils || !window.utils.isAuthenticated()) {
+            console.warn('[Courses Page] User not authenticated, redirecting to login');
+            window.utils.redirectTo('login.html');
+        } else {
+            console.log('[Courses Page] User authenticated, page ready');
+        }
+        
+        // Log when courses container is available
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('courses-container');
+            console.log('[Courses Page] DOMContentLoaded - courses-container found:', !!container);
+            console.log('[Courses Page] Scripts loaded:', {
+                utils: typeof window.utils,
+                api: typeof window.api,
+                loadCourses: typeof loadCourses
+            });
+        });
+    </script>
+</body>
+</html>
+

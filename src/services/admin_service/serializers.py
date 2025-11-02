@@ -46,11 +46,8 @@ class AdminDashboardLogSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AdminDashboardLog
-        fields = [
-            'id', 'admin_user', 'admin_email', 'action_type', 'target_type',
-            'target_id', 'description', 'ip_address', 'metadata', 'created_at'
-        ]
-        read_only_fields = fields
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'ip_address']
 
 
 class FraudDetectionLogSerializer(serializers.ModelSerializer):
@@ -81,13 +78,13 @@ class UpdateFraudStatusSerializer(serializers.Serializer):
 class AdminSettingsSerializer(serializers.ModelSerializer):
     """Admin settings serializer"""
     
-    updated_by_email = serializers.CharField(source='updated_by.email', read_only=True, allow_null=True)
+    updated_by_email = serializers.CharField(source='last_updated_by.email', read_only=True, allow_null=True)
     
     class Meta:
         model = AdminSettings
         fields = [
             'id', 'setting_key', 'setting_type', 'value', 'description',
-            'updated_by', 'updated_by_email', 'updated_at'
+            'last_updated_by', 'updated_by_email', 'updated_at'
         ]
         read_only_fields = ['id', 'updated_at']
 

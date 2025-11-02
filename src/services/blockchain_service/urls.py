@@ -12,13 +12,13 @@ router.register(r'stats', BlockchainStatsViewSet, basename='blockchain-stats')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('payment/request-approval/', 
-         OnChainPaymentViewSet.as_view({'post': 'request_approval'}), 
+    path('payment/request-approval/',
+         OnChainPaymentViewSet.as_view({'post': 'request_approval'}),
          name='request-approval'),
-    path('payment/confirm-payment/', 
-         OnChainPaymentViewSet.as_view({'post': 'confirm_payment'}), 
+    path('payment/confirm-payment/',
+         OnChainPaymentViewSet.as_view({'post': 'confirm_payment'}),
          name='confirm-payment'),
-    path('payment/history/', 
-         OnChainPaymentViewSet.as_view({'get': 'payment_history'}), 
+    path('payment/history/',
+         OnChainPaymentViewSet.as_view({'get': 'payment_history'}),
          name='payment-history'),
 ]

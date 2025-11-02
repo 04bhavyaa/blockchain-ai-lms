@@ -60,3 +60,5 @@ logs/
 docker-compose.yml
 Dockerfile
 frontend/
+*migrations/
+*.md

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px var(--spacing-md) var(--spacing-xl);
+        }
+
+        .dashboard-header {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: var(--spacing-lg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .course-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .course-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .course-thumbnail {
+            width: 100%;
+            height: 180px;
+            background: var(--bg-tertiary);
+            object-fit: cover;
+        }
+
+        .course-content {
+            padding: var(--spacing-md);
+        }
+
+        .course-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .course-meta {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .course-progress {
+            margin-top: var(--spacing-sm);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: var(--spacing-xs);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--spacing-xl);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <div class="navbar-links">
+                <a href="dashboard.html" class="navbar-link">Dashboard</a>
+                <a href="courses.html" class="navbar-link">Courses</a>
+                <a href="chatbot.html" class="navbar-link">Chatbot</a>
+                <a href="profile.html" class="navbar-link">Profile</a>
+                <button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: var(--spacing-sm);">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Welcome back!</h1>
+            <p class="dashboard-subtitle" id="user-greeting">Loading...</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="stats-container">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-courses">-</div>
+                <div class="stat-label">Enrolled Courses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-completion">-</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-tokens">-</div>
+                <div class="stat-label">Tokens Earned</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-time">-</div>
+                <div class="stat-label">Hours Learned</div>
+            </div>
+        </div>
+
+        <!-- My Courses Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <span>My Courses</span>
+                <a href="courses.html" style="font-size: 0.9rem; color: var(--accent-primary);">Browse All →</a>
+            </h2>
+            <div id="my-courses-container" class="courses-grid">
+                <div class="loading-spinner">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookmarked Courses -->
+        <div class="section">
+            <h2 class="section-title">Bookmarked Courses</h2>
+            <div id="bookmarked-container" class="courses-grid">
+                <div class="loading-spinner">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Courses -->
+        <div class="section">
+            <h2 class="section-title">Recommended For You</h2>
+            <div id="recommended-container" class="courses-grid">
+                <div class="loading-spinner">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trending Courses -->
+        <div class="section">
+            <h2 class="section-title">Trending Now</h2>
+            <div id="trending-container" class="courses-grid">
+                <div class="loading-spinner">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Check authentication
+        if (!window.utils || !window.utils.isAuthenticated()) {
+            window.utils.redirectTo('login.html');
+        } else {
+            // Check if admin and redirect
+            const user = window.utils.getUser();
+            if (user && (user.is_staff || user.is_superuser)) {
+                window.utils.redirectTo('admin-dashboard.html');
+            }
+        }
+    </script>
+</body>
+</html>
+

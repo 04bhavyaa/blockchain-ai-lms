@@ -13,21 +13,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+from corsheaders.defaults import default_headers
 
-# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-w0swmt$c1zn1sc)y&xwqx&+=alhsv!#8e5+f!g(&!742ozn$ru"
-
-# SECURITY WARNING: don't run with debug turned on in production!
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', "django-insecure-w0swmt$c1zn1sc)y&xwqx&+=alhsv!#8e5+f!g(&!742ozn$ru")
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+ROOT_URLCONF = 'src.config.urls'
 
 # Application definition
 INSTALLED_APPS = [
@@ -56,7 +50,7 @@ INSTALLED_APPS = [
     'src.services.ai_recommendations',
     'src.services.auth_service',
     'src.services.blockchain_service',
-    # 'src.services.chatbot_service',
+    'src.services.chatbot_service',
     'src.services.courses_service',
     'src.services.payment_service',
     'src.services.progress_service',
@@ -72,14 +66,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'src.urls'
-
-ROOT_URLCONF = 'src.config.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'frontend'],
+        'DIRS': [BASE_DIR / 'frontend-simple'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -145,12 +135,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework Configuration [web:76][web:163]
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour'
+    },
     'DEFAULT_PAGINATION_CLASS': 'src.shared.pagination.StandardPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_FILTER_BACKENDS': [
@@ -159,15 +153,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour'
-    }
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
 
 # JWT Configuration [web:76][web:163]
@@ -190,18 +176,27 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "authorization",
+]
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'bhavya.jha025@nmims.edu.in')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@lms.com')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'bhavya.jha025@nmims.edu.in')
 
 # Logging
 LOGGING = {

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Content - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .course-content-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px var(--spacing-md) var(--spacing-xl);
+        }
+
+        .course-header {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            border: 1px solid var(--border-color);
+        }
+
+        .course-nav {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .course-title {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .course-progress-info {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            color: var(--text-secondary);
+        }
+
+        .content-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: var(--spacing-xl);
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .sidebar-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .module-nav-item {
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin-bottom: var(--spacing-xs);
+            transition: all 0.2s;
+        }
+
+        .module-nav-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .module-nav-item.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .lesson-nav-item {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            padding-left: var(--spacing-md);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin-bottom: var(--spacing-xs);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .lesson-nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .lesson-nav-item.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .lesson-nav-item.completed {
+            color: var(--success);
+        }
+
+        .lesson-nav-item.completed::before {
+            content: '✓ ';
+        }
+
+        .main-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-color);
+            min-height: 600px;
+        }
+
+        .lesson-content {
+            display: none;
+        }
+
+        .lesson-content.active {
+            display: block;
+        }
+
+        .lesson-header {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .lesson-title {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .lesson-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            margin-bottom: var(--spacing-lg);
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .lesson-description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .quiz-container {
+            margin-top: var(--spacing-xl);
+        }
+
+        .quiz-question {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-lg);
+            border-radius: 8px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .quiz-question h4 {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .quiz-option {
+            padding: var(--spacing-sm);
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .quiz-option.selected {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .progress-bar-container {
+            background: var(--bg-tertiary);
+            border-radius: var(--border-radius);
+            height: 8px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .progress-bar-fill {
+            background: var(--accent-primary);
+            height: 100%;
+            border-radius: var(--border-radius);
+            transition: width 0.3s;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <div class="navbar-links">
+                <a href="dashboard.html" class="navbar-link">Dashboard</a>
+                <a href="courses.html" class="navbar-link">Courses</a>
+                <a href="profile.html" class="navbar-link">Profile</a>
+                <button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: var(--spacing-sm);">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Course Content -->
+    <div class="course-content-container">
+        <div class="course-header">
+            <div class="course-nav">
+                <button onclick="goBack()" class="btn btn-secondary">← Back to Course</button>
+            </div>
+            <h1 class="course-title" id="course-title">Loading Course...</h1>
+            <div class="course-progress-info">
+                <span>Progress: <strong id="course-progress">0%</strong></span>
+                <span>Lessons Completed: <strong id="lessons-completed">0</strong></span>
+            </div>
+            <div class="progress-bar-container" style="margin-top: var(--spacing-md);">
+                <div class="progress-bar-fill" id="course-progress-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <div class="content-layout">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Course Modules</h3>
+                    <div id="modules-nav">
+                        <div class="loading">Loading modules...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="main-content">
+                <div id="lesson-content-area">
+                    <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-secondary);">
+                        Select a lesson from the sidebar to begin
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/course-content.js"></script>
+    <script>
+        // Check authentication
+        if (!window.utils || !window.utils.isAuthenticated()) {
+            window.utils.redirectTo('login.html');
+        }
+    </script>
+</body>
+</html>
+

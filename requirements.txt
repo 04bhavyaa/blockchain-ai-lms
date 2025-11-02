@@ -5,7 +5,6 @@ django-cors-headers
 django-filter
 drf-spectacular
 psycopg2-binary
-redis
 django-redis
 celery
 django-celery-beat
@@ -21,11 +20,12 @@ requests
 scipy
 scikit-learn
 numpy
-langchain
-langchain-core
-langchain-community
-langchain-google-genai
-langchain-text-splitters
-google-generativeai
 faiss-cpu
 sentence-transformers
+langchain
+langchain-core
+langchain-google-genai
+google-generativeai
+langchain-community
+chromadb
+redis

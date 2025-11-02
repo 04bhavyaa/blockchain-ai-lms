@@ -28,7 +28,7 @@ urlpatterns = [
     path(f'api/{API_VERSION}/admin/', include('src.services.admin_service.urls')),
     path(f'api/{API_VERSION}/recommendations/', include('src.services.ai_recommendations.urls')),
     path(f'api/{API_VERSION}/blockchain/', include('src.services.blockchain_service.urls')),
-    # path(f'api/{API_VERSION}/chatbot/', include('src.services.chatbot_service.urls')),  # TEMPORARILY DISABLED
+    path(f'api/{API_VERSION}/chatbot/', include('src.services.chatbot_service.urls')),
     path(f'api/{API_VERSION}/courses/', include('src.services.courses_service.urls')),
     path(f'api/{API_VERSION}/payment/', include('src.services.payment_service.urls')),
     path(f'api/{API_VERSION}/progress/', include('src.services.progress_service.urls')),
