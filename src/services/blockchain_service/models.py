@@ -8,13 +8,14 @@ class SmartContractConfig(models.Model):
     CONTRACT_TYPES = [
         ('token', 'ERC20 Token'),
         ('certificate', 'ERC721 Certificate NFT'),
+        ('ap2', 'Agent Payment Protocol'),
     ]
     contract_type = models.CharField(max_length=50, choices=CONTRACT_TYPES, unique=True)
     contract_address = models.CharField(max_length=42, unique=True)
     contract_abi = models.JSONField(help_text="Contract ABI")
     deployment_hash = models.CharField(max_length=255)
     block_number = models.BigIntegerField()
-    network = models.CharField(max_length=50, default='sepolia')
+    network = models.CharField(max_length=50, default='localhost')
     is_active = models.BooleanField(default=True)
     deployed_at = models.DateTimeField(auto_now_add=True)
     class Meta:
@@ -77,11 +78,8 @@ class Certificate(models.Model):
     metadata = models.JSONField(default=dict)
     verified_at = models.DateTimeField(null=True, blank=True)
     verified_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='verified_certificates'
+        User, on_delete=models.SET_NULL, null=True,
+        blank=True, related_name='verified_certificates'
     )
     issued_at = models.DateTimeField(auto_now_add=True)
     minted_at = models.DateTimeField(null=True, blank=True)
@@ -129,6 +127,7 @@ class WebhookLog(models.Model):
         ('payment_failed', 'Payment Failed'),
         ('certificate_minted', 'Certificate Minted'),
         ('certificate_burned', 'Certificate Burned'),
+        ('ap2_agent_event', 'AP2 Agent Event'),
     ]
     event_type = models.CharField(max_length=50, choices=EVENT_TYPES)
     transaction_hash = models.CharField(max_length=255, unique=True)

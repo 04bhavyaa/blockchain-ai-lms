@@ -61,4 +61,7 @@ docker-compose.yml
 Dockerfile
 frontend/
 *migrations/
-*.md
+COMPONENTS_EXPLANATION.md
+CRITICAL_FIXES_APPLIED.md
+chroma_db/
+SEED_DATA_INSTRUCTIONS.md

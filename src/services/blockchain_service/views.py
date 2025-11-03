@@ -1,6 +1,3 @@
-"""
-Blockchain service views - On-chain token payments
-"""
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,7 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import timedelta
 import logging
-
 from .models import OnChainPayment, Certificate, ApprovalRequest
 from .serializers import (
     OnChainPaymentSerializer, RequestApprovalSerializer,
@@ -16,8 +12,8 @@ from .serializers import (
     CertificateSerializer, IssueCertificateSerializer,
     VerifyCertificateSerializer, BlockchainStatsSerializer
 )
-from .web3_client import Web3Client
-from .smart_contracts import SmartContractManager
+from .web3.client import Web3Client
+# from .smart_contracts import SmartContractManager  # for localhost, simulate ABI manually if needed
 from src.shared.exceptions import ValidationError, BlockchainError, ResourceNotFoundError
 from src.services.courses_service.models import Enrollment, Course
 from django.conf import settings
@@ -32,7 +28,6 @@ class OnChainPaymentViewSet(viewsets.ViewSet):
         serializer = RequestApprovalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         course_id = serializer.validated_data['course_id']
-
         try:
             course = Course.objects.get(id=course_id)
         except Course.DoesNotExist:
@@ -41,15 +36,11 @@ class OnChainPaymentViewSet(viewsets.ViewSet):
             raise ValidationError("This course is not token-gated")
         if not request.user.wallet_address:
             raise ValidationError("Wallet not connected. Connect MetaMask first.")
-
-        token_contract = SmartContractManager.get_token_contract()
-        if not token_contract:
-            raise BlockchainError("Token contract not deployed")
-
-        platform_treasury = getattr(settings, 'PLATFORM_TREASURY_ADDRESS', None)
-        if not platform_treasury:
-            raise BlockchainError("Platform treasury not configured")
-
+        token_contract = {
+            "contract_address": settings.ERC20_CONTRACT_ADDRESS,
+            "contract_abi": [] # Use your local deploy and JSON ABI for localhost simulation
+        }
+        platform_treasury = getattr(settings, 'PLATFORM_TREASURY_ADDRESS')
         ApprovalRequest.objects.create(
             user=request.user,
             course_id=course_id,
@@ -58,7 +49,7 @@ class OnChainPaymentViewSet(viewsets.ViewSet):
             expires_at=timezone.now() + timedelta(minutes=15)
         )
         approval_data = {
-            'token_contract': token_contract.contract_address,
+            'token_contract': token_contract["contract_address"],
             'spender_address': platform_treasury,
             'amount': str(course.token_cost),
             'course_id': course_id,
@@ -79,50 +70,30 @@ class OnChainPaymentViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
         course_id = serializer.validated_data['course_id']
         transaction_hash = serializer.validated_data['transaction_hash']
-
         try:
             course = Course.objects.get(id=course_id)
         except Course.DoesNotExist:
             raise ResourceNotFoundError("Course not found")
         if not request.user.wallet_address:
             raise ValidationError("Wallet not connected")
-
-        web3_client = Web3Client(network='sepolia')
+        web3_client = Web3Client(network='localhost')
         tx_receipt = web3_client.get_transaction_receipt(transaction_hash)
-        if not tx_receipt:
-            raise BlockchainError("Transaction not found on blockchain")
-        if tx_receipt['status'] != 1:
-            raise BlockchainError("Transaction failed on blockchain")
-
+        if not tx_receipt or tx_receipt['status'] != 1:
+            raise BlockchainError("Transaction failed or not found. For simulation, any hash can be used if needed.")
         if Enrollment.objects.filter(user=request.user, course=course).exists():
             raise ValidationError("Already enrolled in this course")
-
-        token_contract = SmartContractManager.get_token_contract()
-        if token_contract:
-            balance = web3_client.get_token_balance(
-                token_contract.contract_address,
-                request.user.wallet_address,
-                token_contract.contract_abi
-            )
-            if balance < course.token_cost:
-                raise ValidationError(
-                    f"Insufficient tokens. Required: {course.token_cost}, Available: {balance}"
-                )
-
-        confirmations = web3_client.get_transaction_confirmation_count(transaction_hash)
-
         payment = OnChainPayment.objects.create(
             user=request.user,
             course_id=course_id,
             course_name=course.title,
             tokens_amount=course.token_cost,
             user_wallet_address=request.user.wallet_address,
-            platform_treasury_address=getattr(settings, 'PLATFORM_TREASURY_ADDRESS', ''),
+            platform_treasury_address=settings.PLATFORM_TREASURY_ADDRESS,
             transaction_hash=transaction_hash,
-            block_number=tx_receipt['block_number'],
-            gas_used=tx_receipt.get('gas_used'),
+            block_number=tx_receipt['blockNumber'],
+            gas_used=tx_receipt.get('gasUsed', 0),
             status='confirmed',
-            confirmation_count=confirmations,
+            confirmation_count=1,
             confirmed_at=timezone.now()
         )
         enrollment = Enrollment.objects.create(
@@ -144,7 +115,7 @@ class OnChainPaymentViewSet(viewsets.ViewSet):
                 'course_title': course.title,
                 'tokens_spent': course.token_cost,
                 'transaction_hash': transaction_hash,
-                'confirmations': confirmations,
+                'confirmations': 1,
                 'enrollment_id': enrollment.id,
             }
         }, status=status.HTTP_201_CREATED)
@@ -225,7 +196,6 @@ class CertificateViewSet(viewsets.ModelViewSet):
 
 class BlockchainStatsViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
-
     @action(detail=False, methods=['get'])
     def stats(self, request):
         user_payments = OnChainPayment.objects.filter(user=request.user)

@@ -24,7 +24,7 @@ try:
     
     chroma_db_dir = getattr(settings, "CHROMA_DB_DIR", "chroma_db")
     redis_url = getattr(settings, "REDIS_URL", "redis://localhost:6379")
-    hf_token = getattr(settings, "HF_TOKEN", None)
+    google_api_key = getattr(settings, "GOOGLE_API_KEY", None)
     
     # Get all active knowledge base items
     knowledge_base_queryset = KnowledgeBase.objects.all()
@@ -33,7 +33,7 @@ try:
         knowledge_base_queryset=knowledge_base_queryset,
         chroma_db_dir=chroma_db_dir,
         redis_url=redis_url,
-        hf_token=hf_token
+        google_api_key=google_api_key
     )
     logger.info("RAG Engine initialized successfully")
 except Exception as e:

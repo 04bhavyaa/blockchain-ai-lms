@@ -1,3 +1,13 @@
+# --- Core LangGraph & LangChain Packages ---
+langgraph
+langchain-core
+langchain-community
+langchain-google-genai
+langchain-text-splitters
+chromadb
+redis
+
+# --- Your Project Dependencies ---
 Django
 djangorestframework
 djangorestframework-simplejwt
@@ -16,16 +26,6 @@ pydantic
 python-decouple
 python-dotenv
 Pillow
-requests
 scipy
 scikit-learn
-numpy
-faiss-cpu
-sentence-transformers
-langchain
-langchain-core
-langchain-google-genai
-google-generativeai
-langchain-community
-chromadb
-redis
+uvicorn

@@ -5,17 +5,13 @@ class OnChainPaymentSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source='user.email', read_only=True)
     class Meta:
         model = OnChainPayment
-        fields = [
-            'id', 'user_email', 'course_id', 'course_name', 'tokens_amount',
-            'user_wallet_address', 'platform_treasury_address', 'transaction_hash',
-            'block_number', 'gas_used', 'gas_price', 'status',
-            'confirmation_count', 'metadata', 'created_at', 'confirmed_at'
-        ]
-        read_only_fields = [
-            'id', 'user_email', 'transaction_hash', 'status',
-            'confirmation_count', 'created_at', 'confirmed_at', 'block_number',
-            'gas_used', 'gas_price', 'metadata'
-        ]
+        fields = ['id', 'user_email', 'course_id', 'course_name', 'tokens_amount',
+                  'user_wallet_address', 'platform_treasury_address', 'transaction_hash',
+                  'block_number', 'gas_used', 'gas_price', 'status', 'confirmation_count',
+                  'metadata', 'created_at', 'confirmed_at']
+        read_only_fields = ['id', 'user_email', 'transaction_hash', 'status',
+                            'confirmation_count', 'created_at', 'confirmed_at', 'block_number',
+                            'gas_used', 'gas_price', 'metadata']
 
 class RequestApprovalSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
@@ -37,17 +33,13 @@ class CertificateSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source='user.email', read_only=True)
     class Meta:
         model = Certificate
-        fields = [
-            'id', 'user_email', 'course_id', 'course_name',
-            'completion_date', 'status', 'nft_token_id',
-            'nft_contract_address', 'transaction_hash', 'certificate_hash',
-            'zk_proof_hash', 'ipfs_metadata_hash', 'metadata',
-            'issued_at', 'minted_at', 'verified_at', 'verified_by'
-        ]
-        read_only_fields = [
-            'id', 'user_email', 'nft_token_id', 'transaction_hash', 'certificate_hash',
-            'issued_at', 'minted_at', 'verified_at', 'verified_by', 'status'
-        ]
+        fields = ['id', 'user_email', 'course_id', 'course_name', 'completion_date',
+                  'status', 'nft_token_id', 'nft_contract_address', 'transaction_hash',
+                  'certificate_hash', 'zk_proof_hash', 'ipfs_metadata_hash', 'metadata',
+                  'issued_at', 'minted_at', 'verified_at', 'verified_by']
+        read_only_fields = ['id', 'user_email', 'nft_token_id', 'transaction_hash',
+                            'certificate_hash', 'issued_at', 'minted_at', 'verified_at',
+                            'verified_by', 'status', 'zk_proof_hash', 'ipfs_metadata_hash']
 
 class IssueCertificateSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
