@@ -183,16 +183,53 @@ async function handleEnrollment() {
             // In production, this would redirect to Stripe Checkout or show payment form
             showAlert('info', 'Payment integration coming soon. For now, enrollment will proceed.');
         } else if (courseData && courseData.access_type === 'token') {
-            // Check if user has enough tokens
-            const user = window.utils.getUser();
-            const requiredTokens = parseInt(courseData.token_cost) || 0;
-            const userTokens = parseInt(user?.token_balance) || 0;
-            
-            if (user && userTokens < requiredTokens) {
-                showAlert('error', `Insufficient tokens. Required: ${requiredTokens}, Available: ${userTokens}. Please purchase more tokens.`);
+            // Token-gated purchase flow using MetaMask
+            try {
+                const requiredTokens = parseInt(courseData.token_cost) || 0;
+
+                // 1) Request approval data from backend (spender, token_contract)
+                const approvalResp = await window.api.requestPaymentApproval(requiredTokens, courseId);
+                if (!approvalResp || approvalResp.status !== 'success') {
+                    throw new Error('Failed to get approval data from server');
+                }
+                const approvalData = approvalResp.data;
+                const tokenContractAddress = approvalData.token_contract;
+                const spenderAddress = approvalData.spender_address;
+                const amount = approvalData.amount || requiredTokens;
+
+                // 2) Ask user to approve tokens in MetaMask
+                showAlert('info', 'Please confirm the token approval in MetaMask');
+                const approveTx = await window.contracts.approveERC20(tokenContractAddress, 'ERC20', spenderAddress, amount);
+                const approveReceipt = await approveTx.wait();
+
+                // 3) Notify backend with transaction hash to confirm payment and enroll
+                const txHash = approveReceipt.transactionHash || approveReceipt.transactionHash || approveTx.hash || (approveReceipt && approveReceipt.transactionHash);
+                // Use direct request to match backend serializer fields (course_id, transaction_hash)
+                const confirmResp = await window.api.request('POST', '/blockchain/payment/confirm-payment/', {
+                    course_id: courseId,
+                    transaction_hash: txHash
+                });
+
+                if (confirmResp && confirmResp.status === 'success') {
+                    showAlert('success', confirmResp.message || 'Course unlocked via on-chain token approval');
+                    // Update UI to show enrolled
+                    enrollBtn.textContent = 'Access Course';
+                    enrollBtn.classList.remove('btn-primary');
+                    enrollBtn.classList.add('btn-secondary');
+                    enrollBtn.onclick = () => {
+                        window.utils.redirectTo(`course-content.html?courseId=${courseId}`);
+                    };
+                    // Reload course detail to reflect new enrollment
+                    setTimeout(() => loadCourseDetail(), 1000);
+                    window.utils.setLoading(enrollBtn, false);
+                    return;
+                } else {
+                    throw new Error((confirmResp && confirmResp.message) || 'Failed to confirm payment with backend');
+                }
+            } catch (err) {
+                console.error('Token payment error:', err);
+                showAlert('error', err.message || 'Token payment failed');
                 window.utils.setLoading(enrollBtn, false);
-                // Optionally redirect to token purchase page
-                // window.utils.redirectTo('profile.html?tab=tokens');
                 return;
             }
         }

@@ -1,31 +1,56 @@
-# --- Core LangGraph & LangChain Packages ---
-langgraph
-langchain-core
-langchain-community
-langchain-google-genai
-langchain-text-splitters
-chromadb
-redis
+# Blockchain AI LMS - Dependencies for uv
+# Install with: uv pip install -r requirements.txt
 
-# --- Your Project Dependencies ---
+# Django & REST Framework
 Django
-djangorestframework
-djangorestframework-simplejwt
-django-cors-headers
-django-filter
-drf-spectacular
-psycopg2-binary
-django-redis
-celery
 django-celery-beat
 django-celery-results
-web3
-stripe
+django-cors-headers
+django-filter
+django-redis
+djangorestframework
+djangorestframework-simplejwt
+drf-spectacular
+
+# LangChain & LangGraph
+langchain
+langchain-community
+langchain-core
+langchain-google-genai
+langchain-text-splitters
+langgraph
+
+# AI & Machine Learning
 google-generativeai
+scikit-learn
+scipy
+
+# Vector Database & Embeddings
+chromadb
+tiktoken
+
+# Database
+psycopg2-binary
+
+# Redis & Caching
+hiredis
+redis
+
+# Task Queue
+celery
+
+# Blockchain & Web3
+web3
+
+# Payments
+stripe
+
+# Utilities
+Pillow
 pydantic
+python-dateutil
 python-decouple
 python-dotenv
-Pillow
-scipy
-scikit-learn
+
+# Server
 uvicorn
