@@ -17,6 +17,6 @@ router.register(r'paths', LearningPathViewSet, basename='learning-paths')
 urlpatterns = [
     path('', include(router.urls)),
     path('for-me/', RecommendationViewSet.as_view({'get': 'for_me'}), name='recommendations-for-me'),
-    path('trending/', RecommendationViewSet.as_view({'get': 'trending'}), name='recommendations-trending'),
-    path('similar/', RecommendationViewSet.as_view({'get': 'similar'}), name='recommendations-similar'),
+    # path('trending/', RecommendationViewSet.as_view({'get': 'trending'}), name='recommendations-trending'),
+    # path('similar/', RecommendationViewSet.as_view({'get': 'similar'}), name='recommendations-similar'),
 ]

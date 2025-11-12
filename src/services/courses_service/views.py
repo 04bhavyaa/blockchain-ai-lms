@@ -13,10 +13,10 @@ import logging
 import requests
 
 from .models import (
-    Course, Module, Lesson, Quiz, Question, Answer, Enrollment, CourseRating, Bookmark
+    CourseCategory, Course, Module, Lesson, Quiz, Question, Answer, Enrollment, CourseRating, Bookmark
 )
 from .serializers import (
-    CourseDetailedSerializer, CourseListSerializer, ModuleSerializer,
+    CourseCategorySerializer, CourseDetailedSerializer, CourseListSerializer, ModuleSerializer,
     LessonSerializer, QuizSerializer, EnrollmentSerializer,
     CourseRatingSerializer, BookmarkSerializer
 )
@@ -247,6 +247,14 @@ class CourseViewSet(viewsets.ModelViewSet):
         )[:10]
         
         serializer = CourseListSerializer(featured, many=True)
+        return Response({'status': 'success', 'count': len(serializer.data), 'data': serializer.data})
+    
+    @action(detail=False, methods=['get'])
+    def categories(self, request):
+        """Get all course categories"""
+        
+        categories = CourseCategory.objects.all().order_by('name')
+        serializer = CourseCategorySerializer(categories, many=True)
         return Response({'status': 'success', 'count': len(serializer.data), 'data': serializer.data})
 
 

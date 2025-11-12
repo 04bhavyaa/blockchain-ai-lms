@@ -2,10 +2,37 @@ import { WEB3_CONFIG, loadABI } from '../config/web3_config.js';
 import { WalletService } from './wallet.js';
 import { showAlert } from '../utils/utils.js';
 
+// Helper function to ensure ethers.js is loaded
+async function waitForEthers() {
+    if (typeof window.ethers !== 'undefined') {
+        return window.ethers;
+    }
+    
+    // Wait up to 5 seconds for ethers to load
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 50 * 100ms = 5 seconds
+        
+        const checkEthers = setInterval(() => {
+            attempts++;
+            if (typeof window.ethers !== 'undefined') {
+                clearInterval(checkEthers);
+                resolve(window.ethers);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkEthers);
+                reject(new Error('Ethers.js library failed to load. Please refresh the page.'));
+            }
+        }, 100);
+    });
+}
+
 export const ContractsService = {
     // Get LMS token balance
     async getTokenBalance(walletAddress) {
         try {
+            // Ensure ethers.js is loaded
+            await waitForEthers();
+            
             const erc20ABI = await loadABI('ERC20');
             if (!erc20ABI) {
                 throw new Error('Failed to load ERC20 ABI');
@@ -32,6 +59,9 @@ export const ContractsService = {
     // Transfer LMS tokens
     async transferTokens(toAddress, amount) {
         try {
+            // Ensure ethers.js is loaded
+            await waitForEthers();
+            
             const erc20ABI = await loadABI('ERC20');
             if (!erc20ABI) {
                 throw new Error('Failed to load ERC20 ABI');
@@ -66,6 +96,9 @@ export const ContractsService = {
     // Get user's NFT certificates
     async getUserCertificates(walletAddress) {
         try {
+            // Ensure ethers.js is loaded
+            await waitForEthers();
+            
             const erc721ABI = await loadABI('ERC721');
             if (!erc721ABI) {
                 throw new Error('Failed to load ERC721 ABI');
@@ -101,6 +134,9 @@ export const ContractsService = {
     // Verify certificate ownership
     async verifyCertificate(tokenId) {
         try {
+            // Ensure ethers.js is loaded
+            await waitForEthers();
+            
             const erc721ABI = await loadABI('ERC721');
             if (!erc721ABI) {
                 throw new Error('Failed to load ERC721 ABI');
@@ -128,6 +164,9 @@ export const ContractsService = {
     // Approve token spending (for AP2 payments)
     async approveTokenSpending(spenderAddress, amount) {
         try {
+            // Ensure ethers.js is loaded
+            await waitForEthers();
+            
             const erc20ABI = await loadABI('ERC20');
             if (!erc20ABI) {
                 throw new Error('Failed to load ERC20 ABI');
@@ -162,6 +201,9 @@ export const ContractsService = {
     // Check token allowance
     async checkAllowance(ownerAddress, spenderAddress) {
         try {
+            // Ensure ethers.js is loaded
+            await waitForEthers();
+            
             const erc20ABI = await loadABI('ERC20');
             if (!erc20ABI) {
                 throw new Error('Failed to load ERC20 ABI');

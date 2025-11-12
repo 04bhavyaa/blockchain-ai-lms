@@ -120,4 +120,90 @@ export const PaymentsService = {
             throw error;
         }
     },
+
+    // Blockchain Payment Methods
+    
+    // Request blockchain approval for token-gated course
+    async requestBlockchainApproval(courseId) {
+        try {
+            const token = AuthService.getToken();
+            const response = await fetch(API_ENDPOINTS.BLOCKCHAIN.REQUEST_APPROVAL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    course_id: courseId,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to request blockchain approval');
+            }
+
+            return data.data;
+        } catch (error) {
+            console.error('Request blockchain approval error:', error);
+            showAlert('error', error.message);
+            throw error;
+        }
+    },
+
+    // Confirm blockchain payment with transaction hash
+    async confirmBlockchainPayment(courseId, transactionHash) {
+        try {
+            const token = AuthService.getToken();
+            const response = await fetch(API_ENDPOINTS.BLOCKCHAIN.CONFIRM_PAYMENT, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    course_id: courseId,
+                    transaction_hash: transactionHash,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to confirm blockchain payment');
+            }
+
+            return data.data;
+        } catch (error) {
+            console.error('Confirm blockchain payment error:', error);
+            showAlert('error', error.message);
+            throw error;
+        }
+    },
+
+    // Get blockchain payment history
+    async getBlockchainPaymentHistory() {
+        try {
+            const token = AuthService.getToken();
+            const response = await fetch(API_ENDPOINTS.BLOCKCHAIN.PAYMENT_HISTORY, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch blockchain payment history');
+            }
+
+            return data.data;
+        } catch (error) {
+            console.error('Get blockchain payment history error:', error);
+            throw error;
+        }
+    },
 };

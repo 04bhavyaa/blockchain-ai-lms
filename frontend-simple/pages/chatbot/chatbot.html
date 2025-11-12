@@ -86,13 +86,13 @@
                 // Send to backend
                 const response = await ChatbotService.sendMessage(message, conversationId);
                 
-                // Update conversation ID
-                if (response.conversation_id) {
-                    conversationId = response.conversation_id;
+                // Update conversation ID (backend returns session_id)
+                if (response.session_id) {
+                    conversationId = response.session_id;
                 }
 
-                // Add bot response to UI
-                addMessage('bot', response.response);
+                // Add bot response to UI (backend returns 'message' not 'response')
+                addMessage('bot', response.message || response.response || 'No response');
             } catch (error) {
                 console.error('Send message error:', error);
                 addMessage('bot', 'Sorry, I encountered an error. Please try again.');

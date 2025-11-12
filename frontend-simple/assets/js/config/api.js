@@ -1,6 +1,6 @@
 // API Configuration - Matches your Django backend endpoints
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
 const API_ENDPOINTS = {
     // Authentication Service
@@ -56,12 +56,14 @@ const API_ENDPOINTS = {
 
     // Blockchain Service
     BLOCKCHAIN: {
-        WALLET_INFO: `${API_BASE_URL}/blockchain/wallet-info/`,
-        TOKEN_BALANCE: `${API_BASE_URL}/blockchain/token-balance/`,
-        TRANSFER_TOKENS: `${API_BASE_URL}/blockchain/transfer-tokens/`,
-        MINT_CERTIFICATE: (courseId) => `${API_BASE_URL}/blockchain/mint-certificate/${courseId}/`,
-        MY_CERTIFICATES: `${API_BASE_URL}/blockchain/my-certificates/`,
-        VERIFY_CERTIFICATE: (tokenId) => `${API_BASE_URL}/blockchain/verify-certificate/${tokenId}/`,
+        REQUEST_APPROVAL: `${API_BASE_URL}/blockchain/payment/request-approval/`,
+        CONFIRM_PAYMENT: `${API_BASE_URL}/blockchain/payment/confirm-payment/`,
+        PAYMENT_HISTORY: `${API_BASE_URL}/blockchain/payment/history/`,
+        CERTIFICATES: `${API_BASE_URL}/blockchain/certificates/`,
+        ISSUE_CERTIFICATE: `${API_BASE_URL}/blockchain/certificates/issue/`,
+        VERIFY_CERTIFICATE: `${API_BASE_URL}/blockchain/certificates/verify/`,
+        MY_CERTIFICATES: `${API_BASE_URL}/blockchain/certificates/my-certificates/`,
+        STATS: `${API_BASE_URL}/blockchain/stats/overview/`,
     },
 
     // Progress Service

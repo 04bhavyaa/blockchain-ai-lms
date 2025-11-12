@@ -172,6 +172,102 @@ class CertificateViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
+    def mint(self, request, pk=None):
+        """Mint NFT certificate on blockchain"""
+        try:
+            certificate = Certificate.objects.get(pk=pk, user=request.user)
+        except Certificate.DoesNotExist:
+            raise ResourceNotFoundError("Certificate not found")
+        
+        if certificate.status == 'minted':
+            return Response({
+                'status': 'error',
+                'message': 'Certificate already minted',
+                'data': CertificateSerializer(certificate).data
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not request.user.wallet_address:
+            raise ValidationError("Wallet not connected. Connect your wallet first.")
+        
+        # Update status to minting
+        certificate.status = 'minting'
+        certificate.save()
+        
+        try:
+            # Prepare metadata
+            metadata = certificate.metadata or {}
+            metadata.update({
+                'name': f"{certificate.course_name} - Completion Certificate",
+                'description': f"Certificate of completion for {certificate.course_name}",
+                'course_id': certificate.course_id,
+                'course_name': certificate.course_name,
+                'completion_date': certificate.completion_date.isoformat(),
+                'recipient': request.user.email,
+                'certificate_hash': certificate.certificate_hash,
+                'issued_at': certificate.issued_at.isoformat(),
+            })
+            
+            # For now, use a simple token URI (in production, upload to IPFS)
+            token_uri = f"data:application/json;base64,{self._encode_metadata(metadata)}"
+            
+            # Call hardhat script to mint
+            import subprocess
+            import json
+            
+            script_path = settings.BASE_DIR / 'services' / 'blockchain_service' / 'hardhat' / 'scripts' / 'mint-certificate.cjs'
+            
+            result = subprocess.run(
+                ['node', str(script_path), request.user.wallet_address, token_uri],
+                cwd=settings.BASE_DIR / 'services' / 'blockchain_service' / 'hardhat',
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            # Parse JSON output from script
+            output_lines = result.stdout.split('\n')
+            json_output = None
+            for line in output_lines:
+                if line.startswith('JSON_OUTPUT:'):
+                    json_output = json.loads(line.replace('JSON_OUTPUT:', '').strip())
+                    break
+            
+            if not json_output or not json_output.get('success'):
+                raise BlockchainError(f"Minting failed: {json_output.get('error') if json_output else result.stderr}")
+            
+            # Update certificate with blockchain data
+            certificate.nft_token_id = int(json_output['tokenId'])
+            certificate.nft_contract_address = json_output['contractAddress']
+            certificate.transaction_hash = json_output['transactionHash']
+            certificate.status = 'minted'
+            certificate.minted_at = timezone.now()
+            certificate.save()
+            
+            logger.info(f"Certificate minted: Token ID {certificate.nft_token_id}, User: {request.user.email}")
+            
+            return Response({
+                'status': 'success',
+                'message': 'Certificate minted successfully',
+                'data': CertificateSerializer(certificate).data
+            })
+            
+        except subprocess.TimeoutExpired:
+            certificate.status = 'failed'
+            certificate.save()
+            raise BlockchainError("Minting timeout - blockchain may be unresponsive")
+        except Exception as e:
+            certificate.status = 'failed'
+            certificate.save()
+            logger.error(f"Certificate minting error: {str(e)}")
+            raise BlockchainError(f"Failed to mint certificate: {str(e)}")
+    
+    def _encode_metadata(self, metadata):
+        """Encode metadata as base64 for data URI"""
+        import base64
+        import json
+        return base64.b64encode(json.dumps(metadata).encode()).decode()
+
+    @action(detail=True, methods=['post'])
     def verify_certificate(self, request, pk=None):
         try:
             certificate = Certificate.objects.get(pk=pk)

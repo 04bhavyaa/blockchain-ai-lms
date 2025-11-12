@@ -14,9 +14,9 @@ const WEB3_CONFIG = {
 
     // Contract Addresses (from deployment-localhost.json)
     CONTRACTS: {
-        LMS_TOKEN: '0x5fbdb2315678afecb367f032d93f642f64180aa3', 
-        CERTIFICATE_NFT: '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512', 
-        AP2_PAYMENT: '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0', 
+        LMS_TOKEN: '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853', 
+        CERTIFICATE_NFT: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6', 
+        AP2_PAYMENT: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318', 
     },
 
     // Token Configuration
@@ -47,7 +47,15 @@ async function loadABI(abiName) {
         if (!response.ok) {
             throw new Error(`Failed to load ${abiName} ABI`);
         }
-        return await response.json();
+        const data = await response.json();
+        
+        // Handle Hardhat artifact format (has 'abi' property)
+        if (data.abi) {
+            return data.abi;
+        }
+        
+        // Assume it's already an ABI array
+        return data;
     } catch (error) {
         console.error(`Error loading ${abiName} ABI:`, error);
         return null;

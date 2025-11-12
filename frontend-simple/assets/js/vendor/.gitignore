@@ -1,0 +1,3 @@
+# Vendor directory for third-party libraries
+# ethers.umd.min.js is auto-copied from hardhat/node_modules via postinstall script
+ethers.umd.min.js

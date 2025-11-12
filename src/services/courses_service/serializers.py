@@ -154,8 +154,8 @@ class CourseListSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'id', 'title', 'slug', 'category', 'category_name', 'instructor_name',
-            'access_type', 'thumbnail_url', 'difficulty_level', 'duration_hours',
-            'average_rating', 'total_enrollments', 'blockchain_unlock_callback'
+            'access_type', 'token_cost', 'price_usd', 'thumbnail_url', 'difficulty_level', 
+            'duration_hours', 'average_rating', 'total_enrollments', 'blockchain_unlock_callback'
         ]
 
 

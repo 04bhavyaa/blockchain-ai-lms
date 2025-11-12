@@ -15,7 +15,7 @@ class OnChainPaymentSerializer(serializers.ModelSerializer):
 
 class RequestApprovalSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
-    tokens_to_approve = serializers.IntegerField()
+    tokens_to_approve = serializers.IntegerField(required=False)  # Optional, will be calculated from course
 
 class ApprovalDataSerializer(serializers.Serializer):
     token_contract = serializers.CharField()

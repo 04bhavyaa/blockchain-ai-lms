@@ -18,10 +18,13 @@ async function initDashboard() {
         showLoading(document.getElementById('statsContainer'));
         showLoading(document.getElementById('coursesContainer'));
 
+        // Fetch enrolled courses once and reuse
+        const myCourses = await CoursesService.getMyCourses();
+
         // Load dashboard data
         await Promise.all([
-            loadStats(),
-            loadEnrolledCourses(),
+            loadStats(user, myCourses),
+            loadEnrolledCourses(myCourses),
             loadRecommendations(),
         ]);
 
@@ -34,11 +37,8 @@ async function initDashboard() {
 }
 
 // Load statistics
-async function loadStats() {
+async function loadStats(user, myCourses) {
     try {
-        const user = AuthService.getUser();
-        const myCourses = await CoursesService.getMyCourses();
-
         // Calculate stats
         const enrolledCount = myCourses.length;
         const completedCount = myCourses.filter(c => c.progress === 100).length;
@@ -56,9 +56,8 @@ async function loadStats() {
 }
 
 // Load enrolled courses
-async function loadEnrolledCourses() {
+async function loadEnrolledCourses(courses) {
     try {
-        const courses = await CoursesService.getMyCourses();
         const container = document.getElementById('enrolledCourses');
 
         if (courses.length === 0) {
@@ -68,10 +67,10 @@ async function loadEnrolledCourses() {
 
         container.innerHTML = courses.map(course => `
             <div class="card course-card" onclick="window.location.href='/pages/courses/course-content.html?id=${course.id}'">
-                <img src="${course.thumbnail || '/assets/images/placeholder.jpg'}" class="card-img-top" alt="${course.title}">
+                <img src="${course.thumbnail_url || '/assets/images/placeholder.svg'}" class="card-img-top" alt="${course.title}">
                 <div class="card-body">
                     <h3 class="card-title">${course.title}</h3>
-                    <p>${course.description}</p>
+                    ${course.description ? `<p>${course.description}</p>` : ''}
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: ${course.progress || 0}%"></div>
                     </div>
@@ -108,12 +107,12 @@ async function loadRecommendations() {
 
         container.innerHTML = recommendations.slice(0, 3).map(course => `
             <div class="card course-card" onclick="window.location.href='/pages/courses/course-detail.html?id=${course.id}'">
-                <img src="${course.thumbnail || '/assets/images/placeholder.jpg'}" class="card-img-top" alt="${course.title}">
+                <img src="${course.thumbnail_url || '/assets/images/placeholder.svg'}" class="card-img-top" alt="${course.title}">
                 <div class="card-body">
                     <h3 class="card-title">${course.title}</h3>
-                    <p>${course.description}</p>
-                    <span class="badge badge-primary">${course.level || 'Beginner'}</span>
-                    <p class="course-price">${course.price === 0 ? 'Free' : `${course.price} LMS Tokens`}</p>
+                    <p>${course.description || ''}</p>
+                    <span class="badge badge-primary">${course.difficulty_level || 'beginner'}</span>
+                    <p class="course-price">${course.access_type === 'free' ? 'Free' : course.access_type === 'token' ? `${course.token_cost || 0} LMS Tokens` : `$${course.price_usd || 0}`}</p>
                 </div>
             </div>
         `).join('');

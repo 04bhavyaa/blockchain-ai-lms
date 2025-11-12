@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../config/api.js';
 import { AuthService } from './auth.js';
 import { showAlert } from '../utils/utils.js';
+import { ErrorHandler } from '../utils/errorHandler.js';
 
 export const CoursesService = {
     // Get all courses
@@ -19,12 +20,15 @@ export const CoursesService = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to fetch courses');
+                const error = new Error(data.message || 'Failed to fetch courses');
+                error.response = data;
+                throw error;
             }
 
             return data;
         } catch (error) {
             console.error('Get courses error:', error);
+            await ErrorHandler.handleApiError(error, { showNotification: false });
             throw error;
         }
     },
@@ -42,12 +46,15 @@ export const CoursesService = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to fetch course details');
+                const error = new Error(data.message || 'Failed to fetch course details');
+                error.response = data;
+                throw error;
             }
 
             return data.data;
         } catch (error) {
             console.error('Get course detail error:', error);
+            await ErrorHandler.handleApiError(error);
             throw error;
         }
     },
@@ -67,13 +74,15 @@ export const CoursesService = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to enroll in course');
+                const error = new Error(data.message || 'Failed to enroll in course');
+                error.response = data;
+                throw error;
             }
 
             showAlert('success', 'Successfully enrolled in course!');
             return data.data;
         } catch (error) {
-            showAlert('error', error.message);
+            await ErrorHandler.handleApiError(error);
             throw error;
         }
     },
@@ -93,7 +102,9 @@ export const CoursesService = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to unenroll from course');
+                const error = new Error(data.message || 'Failed to unenroll from course');
+                error.response = data;
+                throw error;
             }
 
             showAlert('success', 'Successfully unenrolled from course');

@@ -312,12 +312,52 @@ class CourseProgressViewSet(viewsets.ModelViewSet):
         course.certificate_issued = True
         course.certificate_issued_at = timezone.now()
         course.save()
+        
+        # Issue blockchain certificate automatically
+        from src.services.blockchain_service.models import Certificate
+        import hashlib
+        
+        try:
+            # Get course details
+            from src.services.courses_service.models import Course
+            course_obj = Course.objects.get(id=course.course_id)
+            course_name = course_obj.title
+        except Course.DoesNotExist:
+            course_name = f"Course {course.course_id}"
+        
+        # Create certificate hash
+        cert_data = f"{request.user.id}_{course.course_id}_{course.completed_at.date()}"
+        certificate_hash = hashlib.sha256(cert_data.encode()).hexdigest()
+        
+        # Create certificate record
+        certificate, created = Certificate.objects.get_or_create(
+            user=request.user,
+            course_id=course.course_id,
+            defaults={
+                'course_name': course_name,
+                'completion_date': course.completed_at.date(),
+                'certificate_hash': certificate_hash,
+                'metadata': {
+                    'completion_percentage': float(course.completion_percentage),
+                    'tokens_earned': course.tokens_earned,
+                    'average_quiz_score': float(course.average_quiz_score) if course.average_quiz_score else 0,
+                    'total_time_hours': float(course.total_time_hours) if course.total_time_hours else 0,
+                },
+                'status': 'pending'
+            }
+        )
+        
         logger.info(f"Course completed: {request.user.email} - Course {course.course_id}")
+        if created:
+            logger.info(f"Certificate created automatically: {request.user.email} - {course_name}")
+        
         return Response({
             'status': 'success',
             'message': 'Course marked as completed!',
             'data': CourseProgressSerializer(course).data,
             'tokens_earned': TOKEN_REWARDS.get('COURSE_COMPLETE', 100),
+            'certificate_issued': True,
+            'certificate_id': certificate.id
         })
     @action(detail=True, methods=['post'])
     def blockchain_callback(self, request, pk=None):

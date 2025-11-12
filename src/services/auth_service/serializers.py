@@ -15,48 +15,65 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True, min_length=8)
     email = serializers.EmailField()
-
+    
+    # Make these optional
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    education_level = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    learning_goals = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        default=list
+    )
+    
     class Meta:
         model = User
         fields = [
             'email', 'username', 'first_name', 'last_name', 'password',
             'password_confirm', 'education_level', 'learning_goals'
         ]
-
+    
     def validate_email(self, value):
         validate_email(value)
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email already registered")
         return value
-
+    
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("Username already taken")
         return value
-
+    
     def validate_password(self, value):
         try:
             validate_pwd(value)
         except Exception as e:
             raise serializers.ValidationError(str(e))
         return value
-
+    
     def validate(self, data):
         """Validate password confirmation"""
         if data['password'] != data['password_confirm']:
-            raise serializers.ValidationError("Passwords do not match")
+            raise serializers.ValidationError({"password_confirm": "Passwords do not match"})
         return data
-
+    
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        
+        # Handle learning_goals properly
+        learning_goals = validated_data.get('learning_goals', [])
+        if not isinstance(learning_goals, list):
+            learning_goals = []
+        
         user = User.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
-            first_name=validated_data.get('first_name'),
-            last_name=validated_data.get('last_name'),
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
             password=validated_data['password'],
-            education_level=validated_data.get('education_level'),
-            learning_goals=validated_data.get('learning_goals', [])
+            education_level=validated_data.get('education_level', ''),
+            learning_goals=learning_goals
         )
         return user
 
@@ -89,7 +106,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'first_name', 'last_name', 'education_level',
+            'first_name', 'last_name', 'bio', 'education_level',
             'learning_goals', 'avatar_url'
         ]
 
@@ -177,8 +194,8 @@ class ConnectWalletSerializer(serializers.Serializer):
     wallet_address = serializers.CharField(max_length=42)
     signature = serializers.CharField()
     network = serializers.ChoiceField(
-        choices=['ethereum', 'sepolia', 'polygon'],
-        default='sepolia'
+        choices=['ethereum', 'sepolia', 'polygon', 'localhost', 'hardhat'],
+        default='localhost'
     )
 
     def validate_wallet_address(self, value):

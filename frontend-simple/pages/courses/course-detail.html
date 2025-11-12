@@ -94,6 +94,21 @@
         </div>
     </div>
 
+    <!-- Load ethers.js locally (copied from hardhat node_modules via postinstall) -->
+    <!-- Fallback to CDN if local file not available -->
+    <script>
+        // Try to load local ethers.js first
+        const ethersScript = document.createElement('script');
+        ethersScript.src = '/assets/js/vendor/ethers.umd.min.js';
+        ethersScript.onerror = function() {
+            // Fallback to CDN if local file doesn't exist
+            console.warn('Local ethers.js not found, loading from CDN...');
+            const cdnScript = document.createElement('script');
+            cdnScript.src = 'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js';
+            document.head.appendChild(cdnScript);
+        };
+        document.head.appendChild(ethersScript);
+    </script>
     <script type="module" src="/assets/js/pages/course-detail.js"></script>
 </body>
 </html>

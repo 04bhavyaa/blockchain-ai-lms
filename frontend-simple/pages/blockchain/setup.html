@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Hardhat Network - LMS</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="setup-container" style="max-width: 600px; margin: 50px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h1>🔧 Blockchain Development Setup</h1>
+            <p>Before using blockchain features, you need to connect MetaMask to your local Hardhat network.</p>
+            
+            <div class="setup-steps" style="margin-top: 30px;">
+                <h2>Step 1: Verify Hardhat Node is Running</h2>
+                <div id="nodeStatus" style="padding: 15px; background: #f5f5f5; border-radius: 4px; margin: 10px 0;">
+                    <p>Checking connection to Hardhat node...</p>
+                </div>
+                
+                <h2 style="margin-top: 30px;">Step 2: Add Hardhat Network to MetaMask</h2>
+                <button id="addNetworkBtn" class="btn btn-primary" style="margin: 10px 0;">
+                    Add Hardhat Network to MetaMask
+                </button>
+                <div id="networkStatus" style="padding: 15px; margin: 10px 0;"></div>
+                
+                <h2 style="margin-top: 30px;">Step 3: Import Test Account</h2>
+                <div style="padding: 15px; background: #fff3cd; border-radius: 4px; margin: 10px 0;">
+                    <p><strong>Import this private key to MetaMask:</strong></p>
+                    <code style="display: block; padding: 10px; background: white; border-radius: 4px; word-break: break-all; margin: 10px 0;">
+                        687dd15c61c81dc2625d0c112ec2b4b78d7efe94ecb08c181a057daedee46bd8
+                    </code>
+                    <p><small>⚠️ This is a test account from Hardhat with 10,000 test ETH. Never use this on mainnet!</small></p>
+                    <details style="margin-top: 15px;">
+                        <summary style="cursor: pointer; color: #0066cc;">Show manual import instructions</summary>
+                        <ol style="margin-top: 10px;">
+                            <li>Open MetaMask</li>
+                            <li>Click the account icon → "Import Account"</li>
+                            <li>Select "Private Key" type</li>
+                            <li>Paste the private key above (without 0x prefix)</li>
+                            <li>Click "Import"</li>
+                        </ol>
+                    </details>
+                </div>
+                
+                <h2 style="margin-top: 30px;">Step 4: Deploy Contracts</h2>
+                <div style="padding: 15px; background: #f5f5f5; border-radius: 4px; margin: 10px 0;">
+                    <p>Run this command in your terminal:</p>
+                    <code style="display: block; padding: 10px; background: white; border-radius: 4px; margin: 10px 0;">
+                        docker exec lms-hardhat-dev npx hardhat run scripts/deploy.js --network localhost
+                    </code>
+                    <button id="copyDeployCmd" class="btn btn-secondary" style="margin-top: 10px;">
+                        📋 Copy Command
+                    </button>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #d4edda; border-radius: 4px;">
+                    <h3 style="color: #155724; margin-top: 0;">✅ After Setup</h3>
+                    <p>Once you've completed all steps:</p>
+                    <ol>
+                        <li>Switch to "Hardhat Local" network in MetaMask</li>
+                        <li>You should see ~10,000 ETH balance</li>
+                        <li>Navigate back to courses and try blockchain payment</li>
+                    </ol>
+                    <a href="/pages/courses/courses.html" class="btn btn-primary" style="margin-top: 10px;">
+                        Go to Courses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if Hardhat node is accessible
+        async function checkHardhatNode() {
+            const statusDiv = document.getElementById('nodeStatus');
+            try {
+                const response = await fetch('http://127.0.0.1:8545', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'eth_blockNumber',
+                        params: [],
+                        id: 1
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `
+                        <p style="color: green;">✅ Hardhat node is running!</p>
+                        <p>Current block: ${parseInt(data.result, 16)}</p>
+                    `;
+                } else {
+                    throw new Error('Node not responding');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <p style="color: red;">❌ Cannot connect to Hardhat node</p>
+                    <p>Make sure Docker containers are running:</p>
+                    <code style="display: block; padding: 10px; background: white; border-radius: 4px; margin: 10px 0;">
+                        docker compose -f docker-compose.dev.yml up -d
+                    </code>
+                `;
+            }
+        }
+
+        // Add Hardhat network to MetaMask
+        document.getElementById('addNetworkBtn').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('networkStatus');
+            
+            if (typeof window.ethereum === 'undefined') {
+                statusDiv.innerHTML = '<p style="color: red;">❌ MetaMask not installed!</p>';
+                return;
+            }
+            
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x7a69', // 31337 in hex
+                        chainName: 'Hardhat Local',
+                        nativeCurrency: {
+                            name: 'Hardhat ETH',
+                            symbol: 'GO',
+                            decimals: 18
+                        },
+                        rpcUrls: ['http://127.0.0.1:8545']
+                    }]
+                });
+                
+                statusDiv.innerHTML = '<p style="color: green;">✅ Hardhat network added to MetaMask!</p>';
+            } catch (error) {
+                if (error.code === 4902) {
+                    statusDiv.innerHTML = '<p style="color: orange;">⚠️ Network already exists in MetaMask</p>';
+                } else {
+                    statusDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+                }
+            }
+        });
+
+        // Copy deploy command
+        document.getElementById('copyDeployCmd').addEventListener('click', () => {
+            const command = 'docker exec lms-hardhat-dev npx hardhat run scripts/deploy.js --network localhost';
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = document.getElementById('copyDeployCmd');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        });
+
+        // Check node on page load
+        checkHardhatNode();
+    </script>
+</body>
+</html>

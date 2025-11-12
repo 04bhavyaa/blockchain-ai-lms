@@ -4,6 +4,9 @@
   "license": "ISC",
   "description": "",
   "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/copy-ethers-to-frontend.cjs"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
@@ -16,6 +19,7 @@
     "@typechain/hardhat": "^9.1.0",
     "chai": "^4.5.0",
     "ethers": "^6.15.0",
+    "ethers5": "npm:ethers@5.7.2",
     "hardhat": "^2.26.3",
     "hardhat-gas-reporter": "^2.3.0",
     "solidity-coverage": "^0.8.16",

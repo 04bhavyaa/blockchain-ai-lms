@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
@@ -38,7 +38,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
-      - "5050:80"
+      - "5051:80"
     volumes:
       - pgadmin_data_dev:/var/lib/pgadmin
     depends_on:
@@ -51,7 +51,7 @@ services:
     image: redis:7-alpine
     container_name: lms-redis-dev
     ports:
-      - "6379:6379"
+      - "6380:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data_dev:/data
@@ -67,8 +67,8 @@ services:
     image: qdrant/qdrant:latest
     container_name: lms-qdrant-dev
     ports:
-      - "6333:6333"  # HTTP API
-      - "6334:6334"   # gRPC API
+      - "6336:6333"  # HTTP API
+      - "6335:6334"   # gRPC API
     volumes:
       - qdrant_storage_dev:/qdrant/storage
     environment:
@@ -84,11 +84,12 @@ services:
     command: sh -c "npm install && npx hardhat node --hostname 0.0.0.0"
     volumes:
       - ./src/services/blockchain_service/hardhat:/app
+      - ./frontend-simple:/frontend-simple:rw
     ports:
-      - "8545:8545"  # Ethereum JSON-RPC
+      - "8546:8545"  # Ethereum JSON-RPC
     environment:
       - NODE_ENV=development
-    restart: unless-stopped
+    restart: on-failure
 
 volumes:
   postgres_data_dev:

@@ -11,7 +11,7 @@ import secrets
 User = get_user_model()
 
 class EmailVerificationToken(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='email_verification')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verifications')  # Changed from OneToOneField
     token = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
@@ -20,6 +20,7 @@ class EmailVerificationToken(models.Model):
 
     class Meta:
         db_table = 'email_verification_tokens'
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Verification Token for {self.user.email}"

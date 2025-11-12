@@ -63,13 +63,35 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="form-label">Phone</label>
-                                    <input type="tel" id="userPhone" class="form-control">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" id="userUsername" class="form-control" disabled>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Education Level</label>
+                                    <select id="userEducationLevel" class="form-control">
+                                        <option value="">Select Education Level</option>
+                                        <option value="high_school">High School</option>
+                                        <option value="bachelor">Bachelor's Degree</option>
+                                        <option value="master">Master's Degree</option>
+                                        <option value="phd">PhD</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Learning Goals (comma-separated)</label>
+                                    <input type="text" id="userLearningGoals" class="form-control" placeholder="e.g., Web3, AI, Machine Learning">
+                                    <small class="form-text text-muted">Enter your learning goals separated by commas</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Avatar URL (optional)</label>
+                                    <input type="url" id="userAvatarUrl" class="form-control" placeholder="https://example.com/avatar.jpg">
                                 </div>
 
                                 <div class="form-group">
                                     <label class="form-label">Bio</label>
-                                    <textarea id="userBio" class="form-control" rows="4"></textarea>
+                                    <textarea id="userBio" class="form-control" rows="4" placeholder="Tell us about yourself..."></textarea>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Update Profile</button>
@@ -153,6 +175,21 @@
         </div>
     </div>
 
+    <!-- Load ethers.js locally (copied from hardhat node_modules via postinstall) -->
+    <!-- Fallback to CDN if local file not available -->
+    <script>
+        // Try to load local ethers.js first
+        const ethersScript = document.createElement('script');
+        ethersScript.src = '/assets/js/vendor/ethers.umd.min.js';
+        ethersScript.onerror = function() {
+            // Fallback to CDN if local file doesn't exist
+            console.warn('Local ethers.js not found, loading from CDN...');
+            const cdnScript = document.createElement('script');
+            cdnScript.src = 'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js';
+            document.head.appendChild(cdnScript);
+        };
+        document.head.appendChild(ethersScript);
+    </script>
     <script type="module" src="/assets/js/pages/profile.js"></script>
 </body>
 </html>

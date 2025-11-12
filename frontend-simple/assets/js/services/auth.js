@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../config/api.js';
 import { showAlert } from '../utils/utils.js';
+import { ErrorHandler } from '../utils/errorHandler.js';
 
 // Token Management
 const TOKEN_KEY = 'access_token';
@@ -21,13 +22,15 @@ export const AuthService = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Registration failed');
+                const error = new Error(data.message || 'Registration failed');
+                error.response = data;
+                throw error;
             }
 
             showAlert('success', data.message || 'Registration successful! Please verify your email.');
             return data;
         } catch (error) {
-            showAlert('error', error.message);
+            await ErrorHandler.handleApiError(error);
             throw error;
         }
     },
@@ -46,7 +49,9 @@ export const AuthService = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Login failed');
+                const error = new Error(data.message || 'Login failed');
+                error.response = data;
+                throw error;
             }
 
             // Store tokens and user data
@@ -59,7 +64,7 @@ export const AuthService = {
             showAlert('success', 'Login successful!');
             return data.data;
         } catch (error) {
-            showAlert('error', error.message);
+            await ErrorHandler.handleApiError(error);
             throw error;
         }
     },
@@ -177,6 +182,35 @@ export const AuthService = {
             return data;
         } catch (error) {
             showAlert('error', error.message);
+            throw error;
+        }
+    },
+
+    // Resend email verification
+    async resendVerification(email) {
+        try {
+            const response = await fetch(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const error = new Error(data.message || 'Failed to resend verification email');
+                error.response = data;
+                throw error;
+            }
+
+            showAlert('success', data.message || 'Verification email sent!');
+            return data;
+        } catch (error) {
+            if (!error.response) {
+                showAlert('error', error.message);
+            }
             throw error;
         }
     },

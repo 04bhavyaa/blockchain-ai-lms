@@ -1,5 +1,6 @@
 import { CoursesService } from '../services/courses.js';
 import { showAlert, showLoading, hideLoading, getQueryParam, setQueryParam, debounce } from '../utils/utils.js';
+import { ErrorHandler } from '../utils/errorHandler.js';
 
 // State
 let allCourses = [];
@@ -28,7 +29,9 @@ async function initCoursesPage() {
         hideLoading();
     } catch (error) {
         console.error('Courses page initialization error:', error);
-        showAlert('error', 'Failed to load courses');
+        await ErrorHandler.handleApiError(error, {
+            customMessage: 'Failed to load courses page. Please refresh.'
+        });
         hideLoading();
     }
 }
@@ -45,13 +48,29 @@ async function loadCourses() {
         };
 
         const response = await CoursesService.getCourses(params);
-        allCourses = response.data.results || response.data;
+        
+        // Backend returns: { status: 'success', data: [...], pagination: {...} }
+        allCourses = response.data || [];
 
         renderCourses(allCourses);
-        renderPagination(response.data);
+        renderPagination(response.pagination || response);
     } catch (error) {
         console.error('Load courses error:', error);
-        showAlert('error', 'Failed to load courses');
+        await ErrorHandler.handleApiError(error, {
+            customMessage: 'Failed to load courses. Please try again.'
+        });
+        // Show empty state with error message
+        const container = document.getElementById('coursesGrid');
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Unable to Load Courses</h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    There was an error loading courses. Please try refreshing the page.
+                </p>
+                <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
+            </div>
+        `;
     }
 }
 
@@ -59,33 +78,46 @@ async function loadCourses() {
 function renderCourses(courses) {
     const container = document.getElementById('coursesGrid');
 
-    if (courses.length === 0) {
-        container.innerHTML = '<p class="text-center">No courses found</p>';
+    if (!courses || courses.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📚</div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Courses Found</h3>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                    ${filters.search || filters.category || filters.level || filters.price 
+                        ? 'Try adjusting your filters to see more courses.' 
+                        : 'There are no courses available at the moment. Please check back later.'}
+                </p>
+                ${filters.search || filters.category || filters.level || filters.price 
+                    ? '<button class="btn btn-primary" onclick="document.getElementById(\'clearFilters\').click()">Clear Filters</button>' 
+                    : ''}
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = courses.map(course => `
         <div class="card course-card">
-            <img src="${course.thumbnail || '/assets/images/placeholder.jpg'}" 
+            <img src="${course.thumbnail_url || '/assets/images/placeholder.svg'}" 
                  class="card-img-top" 
                  alt="${course.title}"
                  onclick="window.location.href='/pages/courses/course-detail.html?id=${course.id}'">
             <div class="card-body">
                 <h3 class="card-title">${course.title}</h3>
-                <p>${course.description.substring(0, 100)}...</p>
+                ${course.description ? `<p>${course.description.substring(0, 100)}...</p>` : ''}
                 
                 <div class="course-meta">
-                    <span>📚 ${course.total_lessons || 0} lessons</span>
-                    <span>⏱️ ${course.duration || 'N/A'}</span>
-                    <span>👥 ${course.enrolled_count || 0} students</span>
+                    <span>📚 ${course.total_modules || 0} modules</span>
+                    <span>⏱️ ${course.duration_hours || 0}h</span>
+                    <span>👥 ${course.total_enrollments || 0} students</span>
                 </div>
 
                 <div class="mt-md">
-                    <span class="badge badge-primary">${course.level || 'Beginner'}</span>
-                    ${course.category ? `<span class="badge badge-secondary">${course.category}</span>` : ''}
+                    <span class="badge badge-primary">${course.difficulty_level || 'beginner'}</span>
+                    ${course.category_name ? `<span class="badge badge-secondary">${course.category_name}</span>` : ''}
                 </div>
 
-                <p class="course-price">${course.price === 0 ? 'Free' : `${course.price} LMS Tokens`}</p>
+                <p class="course-price">${course.access_type === 'free' ? 'Free' : course.access_type === 'token' ? `${course.token_cost || 0} LMS Tokens` : `$${course.price_usd || 0}`}</p>
                 
                 <button class="btn btn-primary btn-block" onclick="viewCourse(${course.id})">
                     View Course
@@ -112,23 +144,28 @@ async function loadCategories() {
 function renderPagination(data) {
     const container = document.getElementById('pagination');
     
-    if (!data.next && !data.previous) {
+    // Handle both old format (next/previous) and new format (total_pages)
+    const hasNext = data.next || (data.total_pages && data.current_page < data.total_pages);
+    const hasPrevious = data.previous || (data.current_page && data.current_page > 1);
+    
+    if (!hasNext && !hasPrevious) {
         container.innerHTML = '';
         return;
     }
 
-    const totalPages = Math.ceil(data.count / 12);
+    const totalPages = data.total_pages || Math.ceil(data.count / (data.page_size || 12));
+    const currentPageNum = data.current_page || currentPage;
 
     container.innerHTML = `
         <button class="btn btn-outline" 
-                ${!data.previous ? 'disabled' : ''} 
-                onclick="changePage(${currentPage - 1})">
+                ${!hasPrevious ? 'disabled' : ''} 
+                onclick="changePage(${currentPageNum - 1})">
             Previous
         </button>
-        <span>Page ${currentPage} of ${totalPages}</span>
+        <span>Page ${currentPageNum} of ${totalPages}</span>
         <button class="btn btn-outline" 
-                ${!data.next ? 'disabled' : ''} 
-                onclick="changePage(${currentPage + 1})">
+                ${!hasNext ? 'disabled' : ''} 
+                onclick="changePage(${currentPageNum + 1})">
             Next
         </button>
     `;

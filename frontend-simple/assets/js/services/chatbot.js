@@ -25,7 +25,8 @@ export const ChatbotService = {
                 throw new Error(data.message || 'Failed to send message');
             }
 
-            return data.data;
+            // Backend returns data directly, not wrapped in { data: ... }
+            return data;
         } catch (error) {
             showAlert('error', error.message);
             throw error;
@@ -54,7 +55,8 @@ export const ChatbotService = {
                 throw new Error(data.message || 'Failed to fetch chat history');
             }
 
-            return data.data;
+            // Backend returns array directly
+            return data;
         } catch (error) {
             console.error('Get chat history error:', error);
             throw error;

@@ -7,12 +7,37 @@ export function showAlert(type, message, duration = 5000) {
     // Create alert element
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
-    alert.textContent = message;
+    
+    // Handle multi-line messages
+    if (message.includes('\n')) {
+        const lines = message.split('\n');
+        const firstLine = lines[0];
+        const restLines = lines.slice(1);
+        
+        alert.innerHTML = `<strong>${firstLine}</strong>`;
+        if (restLines.length > 0) {
+            const list = document.createElement('ul');
+            list.style.margin = '5px 0 0 0';
+            list.style.paddingLeft = '20px';
+            restLines.forEach(line => {
+                if (line.trim()) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = line.trim();
+                    list.appendChild(listItem);
+                }
+            });
+            alert.appendChild(list);
+        }
+    } else {
+        alert.textContent = message;
+    }
+    
     alert.style.position = 'fixed';
     alert.style.top = '20px';
     alert.style.right = '20px';
     alert.style.zIndex = '9999';
     alert.style.minWidth = '300px';
+    alert.style.maxWidth = '500px';
     alert.style.animation = 'slideIn 0.3s ease-out';
 
     document.body.appendChild(alert);

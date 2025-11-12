@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resend Verification - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="card auth-card">
+            <div class="auth-header">
+                <h1>📧 Resend Verification Email</h1>
+                <p>Enter your email address to receive a new verification link</p>
+            </div>
+
+            <div class="card-body">
+                <form id="resendForm">
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            class="form-control" 
+                            placeholder="your@email.com" 
+                            required>
+                        <small class="form-text text-muted">
+                            We'll send a verification link to this email address
+                        </small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg mt-lg" id="submitBtn">
+                        Send Verification Email
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Already verified? <a href="/pages/auth/login.html">Login here</a></p>
+                    <p>Don't have an account? <a href="/pages/auth/register.html">Register here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AuthService } from '/assets/js/services/auth.js';
+        import { showAlert } from '/assets/js/utils/utils.js';
+
+        // Auto-fill email from URL query parameter if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailParam = urlParams.get('email');
+        if (emailParam) {
+            document.getElementById('email').value = emailParam;
+        }
+
+        document.getElementById('resendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const submitBtn = document.getElementById('submitBtn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            try {
+                await AuthService.resendVerification(email);
+                
+                // Show success message
+                document.getElementById('resendForm').innerHTML = `
+                    <div class="alert alert-success">
+                        <h3>✅ Verification Email Sent!</h3>
+                        <p>We've sent a verification link to <strong>${email}</strong></p>
+                        <p class="mt-md">Please check your inbox (and spam folder) and click the verification link.</p>
+                        <p class="mt-lg">
+                            <a href="/pages/auth/login.html" class="btn btn-primary">Go to Login</a>
+                        </p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Resend verification error:', error);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Verification Email';
+                
+                if (error.response && error.response.message) {
+                    if (error.response.message.includes('wait')) {
+                        showAlert('warning', error.response.message);
+                        // Disable button for 1 minute
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                        }, 60000);
+                        submitBtn.textContent = 'Wait 1 minute...';
+                    } else {
+                        showAlert('error', error.response.message);
+                    }
+                } else {
+                    showAlert('error', error.message || 'Failed to send verification email');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

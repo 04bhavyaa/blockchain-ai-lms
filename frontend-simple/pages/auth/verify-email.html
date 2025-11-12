@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="card auth-card">
+            <div class="auth-header">
+                <h1>🎓 Blockchain LMS</h1>
+                <p>Email Verification</p>
+            </div>
+
+            <div class="card-body">
+                <div id="verificationMessage" class="text-center">
+                    <div class="spinner"></div>
+                    <p>Verifying your email address...</p>
+                </div>
+
+                <div id="verificationResult" class="text-center" style="display: none;">
+                    <!-- Results will be displayed here -->
+                </div>
+
+                <div class="auth-footer">
+                    <p><a href="/pages/auth/login.html">← Back to Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { API_ENDPOINTS } from '/assets/js/config/api.js';
+        import { showAlert } from '/assets/js/utils/utils.js';
+
+        // Get token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token') || window.location.pathname.split('/').pop();
+
+        const messageDiv = document.getElementById('verificationMessage');
+        const resultDiv = document.getElementById('verificationResult');
+
+        if (!token) {
+            messageDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-error">
+                    <h3>❌ Invalid Verification Link</h3>
+                    <p>The verification link is invalid or malformed.</p>
+                    <a href="/pages/auth/login.html" class="btn btn-primary">Go to Login</a>
+                </div>
+            `;
+        } else {
+            // Verify the email token
+            verifyEmail(token);
+        }
+
+        async function verifyEmail(token) {
+            try {
+                const response = await fetch(API_ENDPOINTS.AUTH.VERIFY_EMAIL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token }),
+                });
+
+                const data = await response.json();
+
+                messageDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h3>✅ Email Verified Successfully!</h3>
+                            <p>Your email has been verified. You can now login to your account.</p>
+                            <a href="/pages/auth/login.html" class="btn btn-primary">Login Now</a>
+                        </div>
+                    `;
+                } else {
+                    let errorMessage = data.message || 'Verification failed';
+                    if (data.message && data.message.includes('expired')) {
+                        errorMessage = 'This verification link has expired. Please request a new one.';
+                    } else if (data.message && data.message.includes('already used')) {
+                        errorMessage = 'This verification link has already been used.';
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-error">
+                            <h3>❌ Verification Failed</h3>
+                            <p>${errorMessage}</p>
+                            <div class="mt-md">
+                                <a href="/pages/auth/login.html" class="btn btn-secondary">Go to Login</a>
+                                <button onclick="requestNewVerification()" class="btn btn-primary ml-sm">Request New Link</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                messageDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <h3>❌ Verification Failed</h3>
+                        <p>An error occurred while verifying your email. Please try again later.</p>
+                        <a href="/pages/auth/login.html" class="btn btn-primary">Go to Login</a>
+                    </div>
+                `;
+            }
+        }
+
+        window.requestNewVerification = function() {
+            // Redirect to a page where user can request new verification
+            showAlert('info', 'Please try logging in. If your email is not verified, you will get an option to resend the verification link.');
+            setTimeout(() => {
+                window.location.href = '/pages/auth/login.html';
+            }, 3000);
+        };
+    </script>
+
+    <style>
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ml-sm {
+            margin-left: 10px;
+        }
+
+        .mt-md {
+            margin-top: 20px;
+        }
+    </style>
+</body>
+</html>

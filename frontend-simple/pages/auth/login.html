@@ -51,6 +51,16 @@
                     </button>
                 </form>
 
+                <!-- Resend verification section (hidden by default) -->
+                <div id="resendVerificationSection" style="display: none;" class="mt-md">
+                    <div class="alert alert-warning">
+                        <p>Email not verified. Didn't receive the email?</p>
+                        <button id="resendVerificationBtn" class="btn btn-secondary btn-sm mt-sm">
+                            Resend Verification Email
+                        </button>
+                    </div>
+                </div>
+
                 <div class="auth-footer">
                     <p>Don't have an account? <a href="/pages/auth/register.html">Register here</a></p>
                     <p><a href="/pages/auth/forgot-password.html">Forgot Password?</a></p>
@@ -68,6 +78,8 @@
             window.location.href = '/pages/dashboard/dashboard.html';
         }
 
+        let unverifiedEmail = null;
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -84,8 +96,74 @@
                 window.location.href = '/pages/dashboard/dashboard.html';
             } catch (error) {
                 console.error('Login error:', error);
+                
+                // Handle specific error cases
+                if (error.response) {
+                    const data = error.response;
+                    if (data.message && data.message.includes('Email not verified')) {
+                        // Store email for resend functionality
+                        unverifiedEmail = email;
+                        
+                        // Show resend verification section
+                        document.getElementById('resendVerificationSection').style.display = 'block';
+                        
+                        showAlert('error', data.message + ' Check your email for the verification link or click below to resend.');
+                    } else if (data.message && data.message.includes('banned')) {
+                        showAlert('error', data.message);
+                    } else if (data.errors) {
+                        let errorMessage = 'Login failed:\n';
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            if (Array.isArray(messages)) {
+                                errorMessage += `\n${field}: ${messages.join(', ')}`;
+                            } else {
+                                errorMessage += `\n${field}: ${messages}`;
+                            }
+                        }
+                        showAlert('error', errorMessage);
+                    } else {
+                        showAlert('error', data.message || 'Login failed');
+                    }
+                } else {
+                    showAlert('error', error.message || 'Login failed');
+                }
+                
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Login';
+            }
+        });
+
+        // Handle resend verification button
+        document.getElementById('resendVerificationBtn').addEventListener('click', async (e) => {
+            if (!unverifiedEmail) {
+                showAlert('error', 'Please try logging in first');
+                return;
+            }
+
+            const btn = e.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                await AuthService.resendVerification(unverifiedEmail);
+                
+                // Disable button temporarily to prevent spam
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }, 60000); // 1 minute cooldown
+                
+                btn.textContent = 'Email Sent! (Wait 1 min to resend)';
+            } catch (error) {
+                console.error('Resend verification error:', error);
+                btn.disabled = false;
+                btn.textContent = originalText;
+                
+                if (error.response && error.response.message) {
+                    showAlert('error', error.response.message);
+                } else {
+                    showAlert('error', error.message || 'Failed to resend verification email');
+                }
             }
         });
     </script>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My NFT Certificates - LMS Platform</title>
+    <link rel="stylesheet" href="../../assets/css/base.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <style>
+        .certificates-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+        }
+
+        .certificates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .certificate-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .certificate-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .certificate-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .certificate-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-minted {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-pending {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .status-minting {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .status-failed {
+            background: #ef4444;
+            color: white;
+        }
+
+        .certificate-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .certificate-body h3 {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .certificate-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+        }
+
+        .meta-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .meta-value {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .certificate-blockchain {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .blockchain-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .blockchain-item {
+            font-size: 0.875rem;
+        }
+
+        .blockchain-label {
+            color: var(--text-secondary);
+            margin-right: 0.5rem;
+        }
+
+        .blockchain-value {
+            color: var(--primary-color);
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+        }
+
+        .certificate-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .btn-view {
+            flex: 1;
+            padding: 0.625rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-view:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-verify {
+            flex: 1;
+            padding: 0.625rem 1rem;
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-verify:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-opensea {
+            padding: 0.625rem 1rem;
+            background: #2081e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .btn-opensea:hover {
+            background: #1a6dbd;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .wallet-prompt {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .wallet-prompt-icon {
+            font-size: 2rem;
+        }
+
+        .wallet-prompt-content {
+            flex: 1;
+        }
+
+        .wallet-prompt h4 {
+            color: #92400e;
+            margin-bottom: 0.25rem;
+        }
+
+        .wallet-prompt p {
+            color: #78350f;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../../index.html" class="nav-logo">
+                <span class="logo-icon">🎓</span>
+                <span class="logo-text">LMS Platform</span>
+            </a>
+            <div class="nav-links">
+                <a href="../courses/courses.html">Courses</a>
+                <a href="../dashboard/dashboard.html">Dashboard</a>
+                <a href="../chatbot/chatbot.html">AI Assistant</a>
+                <a href="./my-certificates.html" class="active">Certificates</a>
+                <a href="../user/profile.html">Profile</a>
+                <a href="#" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="certificates-container">
+        <div class="page-header">
+            <h1>🏆 My NFT Certificates</h1>
+            <p>Your blockchain-verified course completion certificates</p>
+        </div>
+
+        <!-- Wallet Connection Prompt -->
+        <div id="walletPrompt" class="wallet-prompt" style="display: none;">
+            <div class="wallet-prompt-icon">🔗</div>
+            <div class="wallet-prompt-content">
+                <h4>Connect Your Wallet</h4>
+                <p>Connect your MetaMask wallet to view and verify your NFT certificates on the blockchain.</p>
+            </div>
+            <button class="btn-primary" onclick="window.location.href='../user/profile.html'">Connect Wallet</button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div id="statsBar" class="stats-bar" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCertificates">0</div>
+                <div class="stat-label">Total Certificates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="mintedCertificates">0</div>
+                <div class="stat-label">Minted NFTs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingCertificates">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading your certificates...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📜</div>
+            <h3>No Certificates Yet</h3>
+            <p>Complete courses to earn NFT certificates that are stored on the blockchain!</p>
+            <a href="../courses/courses.html" class="btn-primary">Browse Courses</a>
+        </div>
+
+        <!-- Certificates Grid -->
+        <div id="certificatesGrid" class="certificates-grid"></div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script type="module">
+        import { AuthService } from '../../assets/js/services/auth.js';
+        import { WalletService } from '../../assets/js/web3/wallet.js';
+        import { API_ENDPOINTS } from '../../assets/js/config/api.js';
+        import { showAlert } from '../../assets/js/utils/utils.js';
+
+        // Check authentication
+        if (!AuthService.isAuthenticated()) {
+            window.location.href = '../auth/login.html';
+        }
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            AuthService.logout();
+            window.location.href = '../auth/login.html';
+        });
+
+        // Elements
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const certificatesGrid = document.getElementById('certificatesGrid');
+        const statsBar = document.getElementById('statsBar');
+        const walletPrompt = document.getElementById('walletPrompt');
+
+        // Load certificates
+        async function loadCertificates() {
+            try {
+                loadingState.style.display = 'block';
+                emptyState.style.display = 'none';
+                certificatesGrid.innerHTML = '';
+
+                const response = await fetch(API_ENDPOINTS.BLOCKCHAIN.MY_CERTIFICATES, {
+                    headers: {
+                        'Authorization': `Bearer ${AuthService.getAccessToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load certificates');
+                }
+
+                const result = await response.json();
+                const certificates = result.data || [];
+
+                loadingState.style.display = 'none';
+
+                if (certificates.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                // Update stats
+                updateStats(certificates);
+                statsBar.style.display = 'grid';
+
+                // Check wallet connection
+                const walletConnected = await WalletService.isWalletConnected();
+                if (!walletConnected) {
+                    walletPrompt.style.display = 'flex';
+                }
+
+                // Render certificates
+                certificates.forEach(cert => {
+                    certificatesGrid.appendChild(createCertificateCard(cert));
+                });
+
+            } catch (error) {
+                console.error('Error loading certificates:', error);
+                loadingState.style.display = 'none';
+                showAlert('Failed to load certificates. Please try again.', 'error');
+            }
+        }
+
+        function updateStats(certificates) {
+            document.getElementById('totalCertificates').textContent = certificates.length;
+            document.getElementById('mintedCertificates').textContent = 
+                certificates.filter(c => c.status === 'minted').length;
+            document.getElementById('pendingCertificates').textContent = 
+                certificates.filter(c => c.status === 'pending' || c.status === 'minting').length;
+        }
+
+        function createCertificateCard(cert) {
+            const card = document.createElement('div');
+            card.className = 'certificate-card';
+            
+            const statusClass = `status-${cert.status}`;
+            const statusText = cert.status.charAt(0).toUpperCase() + cert.status.slice(1);
+            
+            card.innerHTML = `
+                <div class="certificate-header">
+                    <span class="certificate-status ${statusClass}">${statusText}</span>
+                    ${cert.nft_token_id ? `<span style="color: var(--text-secondary);">Token #${cert.nft_token_id}</span>` : ''}
+                </div>
+                
+                <div class="certificate-icon">🏆</div>
+                
+                <div class="certificate-body">
+                    <h3>${cert.course_name}</h3>
+                    
+                    <div class="certificate-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Completed:</span>
+                            <span class="meta-value">${formatDate(cert.completion_date)}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Issued:</span>
+                            <span class="meta-value">${formatDate(cert.issued_at)}</span>
+                        </div>
+                        ${cert.minted_at ? `
+                        <div class="meta-item">
+                            <span class="meta-label">Minted:</span>
+                            <span class="meta-value">${formatDate(cert.minted_at)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${cert.status === 'minted' && cert.nft_token_id ? `
+                    <div class="certificate-blockchain">
+                        <div class="blockchain-info">
+                            <div class="blockchain-item">
+                                <span class="blockchain-label">Token ID:</span>
+                                <span class="blockchain-value">${cert.nft_token_id}</span>
+                            </div>
+                            ${cert.transaction_hash ? `
+                            <div class="blockchain-item">
+                                <span class="blockchain-label">TX Hash:</span>
+                                <span class="blockchain-value" title="${cert.transaction_hash}">
+                                    ${truncateHash(cert.transaction_hash)}
+                                </span>
+                            </div>
+                            ` : ''}
+                            ${cert.nft_contract_address ? `
+                            <div class="blockchain-item">
+                                <span class="blockchain-label">Contract:</span>
+                                <span class="blockchain-value" title="${cert.nft_contract_address}">
+                                    ${truncateHash(cert.nft_contract_address)}
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="certificate-actions">
+                        ${cert.status === 'minted' ? `
+                            <button class="btn-view" onclick="viewCertificateMetadata(${cert.id}, ${cert.nft_token_id})">
+                                View Details
+                            </button>
+                            <button class="btn-verify" onclick="verifyCertificate(${cert.nft_token_id})">
+                                Verify NFT
+                            </button>
+                        ` : cert.status === 'pending' ? `
+                            <button class="btn-view" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                Pending Mint
+                            </button>
+                        ` : cert.status === 'minting' ? `
+                            <button class="btn-view" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                Minting...
+                            </button>
+                        ` : `
+                            <button class="btn-view" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                ${statusText}
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function truncateHash(hash) {
+            if (!hash) return '';
+            return `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
+        }
+
+        // View certificate metadata
+        window.viewCertificateMetadata = async function(certId, tokenId) {
+            try {
+                showAlert('Loading certificate metadata...', 'info');
+                
+                // Fetch from blockchain (tokenURI)
+                const walletConnected = await WalletService.isWalletConnected();
+                if (!walletConnected) {
+                    showAlert('Connect your wallet to view blockchain details', 'warning');
+                    window.location.href = '../user/profile.html';
+                    return;
+                }
+
+                // TODO: Fetch tokenURI from contract and display metadata
+                showAlert('Certificate details will be displayed here', 'info');
+                
+            } catch (error) {
+                console.error('Error viewing certificate:', error);
+                showAlert('Failed to load certificate details', 'error');
+            }
+        };
+
+        // Verify certificate on blockchain
+        window.verifyCertificate = async function(tokenId) {
+            try {
+                const walletConnected = await WalletService.isWalletConnected();
+                if (!walletConnected) {
+                    showAlert('Connect your wallet to verify certificate', 'warning');
+                    window.location.href = '../user/profile.html';
+                    return;
+                }
+
+                showAlert('Verifying certificate on blockchain...', 'info');
+
+                // Import ContractsService dynamically
+                const { ContractsService } = await import('../../assets/js/web3/contracts.js');
+                
+                const certData = await ContractsService.verifyCertificate(tokenId);
+                
+                showAlert(`Certificate verified! Owner: ${truncateHash(certData.owner)}`, 'success');
+                
+            } catch (error) {
+                console.error('Error verifying certificate:', error);
+                showAlert('Failed to verify certificate. Make sure your wallet is connected.', 'error');
+            }
+        };
+
+        // Load certificates on page load
+        loadCertificates();
+    </script>
+</body>
+</html>

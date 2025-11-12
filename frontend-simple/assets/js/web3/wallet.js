@@ -1,18 +1,152 @@
 import { WEB3_CONFIG } from '../config/web3_config.js';
 import { showAlert } from '../utils/utils.js';
+import { AuthService } from '../services/auth.js';
+
+// Wallet state management
+let walletState = {
+    isConnected: false,
+    address: null,
+    chainId: null,
+    balance: null,
+};
+
+// Event listeners for wallet changes
+const walletListeners = [];
 
 export const WalletService = {
-    // Check if MetaMask is installed
-    isMetaMaskInstalled() {
-        return typeof window.ethereum !== 'undefined';
+    // Get current wallet state
+    getState() {
+        return { ...walletState };
     },
 
-    // Connect wallet
+    // Subscribe to wallet state changes
+    subscribe(listener) {
+        walletListeners.push(listener);
+        // Return unsubscribe function
+        return () => {
+            const index = walletListeners.indexOf(listener);
+            if (index > -1) {
+                walletListeners.splice(index, 1);
+            }
+        };
+    },
+
+    // Notify all listeners of state change
+    notifyListeners() {
+        walletListeners.forEach(listener => listener(walletState));
+    },
+
+    // Check if MetaMask is installed
+    isMetaMaskInstalled() {
+        return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+    },
+
+    // Initialize wallet connection (check if already connected)
+    async initialize() {
+        try {
+            if (!this.isMetaMaskInstalled()) {
+                console.log('MetaMask not installed');
+                return false;
+            }
+
+            // Check if already connected
+            const accounts = await window.ethereum.request({ 
+                method: 'eth_accounts' 
+            });
+
+            if (accounts.length > 0) {
+                await this.handleAccountsChanged(accounts);
+                this.setupEventListeners();
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Wallet initialization error:', error);
+            return false;
+        }
+    },
+
+    // Setup MetaMask event listeners
+    setupEventListeners() {
+        if (!window.ethereum) return;
+
+        // Account changed
+        window.ethereum.on('accountsChanged', (accounts) => {
+            this.handleAccountsChanged(accounts);
+        });
+
+        // Chain changed
+        window.ethereum.on('chainChanged', (chainId) => {
+            walletState.chainId = chainId;
+            this.notifyListeners();
+            // Reload page on chain change (recommended by MetaMask)
+            window.location.reload();
+        });
+
+        // Disconnect
+        window.ethereum.on('disconnect', () => {
+            this.handleDisconnect();
+        });
+    },
+
+    // Handle account changes
+    async handleAccountsChanged(accounts) {
+        if (accounts.length === 0) {
+            this.handleDisconnect();
+        } else {
+            const address = accounts[0];
+            walletState.isConnected = true;
+            walletState.address = address;
+            
+            // Get chain ID
+            const chainId = await window.ethereum.request({ 
+                method: 'eth_chainId' 
+            });
+            walletState.chainId = chainId;
+
+            // Get balance
+            try {
+                const balance = await window.ethereum.request({
+                    method: 'eth_getBalance',
+                    params: [address, 'latest'],
+                });
+                // Convert to ETH
+                walletState.balance = parseInt(balance, 16) / 1e18;
+            } catch (error) {
+                console.error('Failed to get balance:', error);
+            }
+
+            // Update backend with wallet address
+            try {
+                if (AuthService.isAuthenticated()) {
+                    await AuthService.updateProfile({ wallet_address: address });
+                }
+            } catch (error) {
+                console.error('Failed to update wallet address on backend:', error);
+            }
+
+            this.notifyListeners();
+        }
+    },
+
+    // Handle disconnect
+    handleDisconnect() {
+        walletState.isConnected = false;
+        walletState.address = null;
+        walletState.chainId = null;
+        walletState.balance = null;
+        this.notifyListeners();
+    },
+
+    // Connect wallet (request account access)
     async connect() {
         try {
             if (!this.isMetaMaskInstalled()) {
-                showAlert('error', 'MetaMask not installed. Please install MetaMask to continue.');
-                window.open('https://metamask.io/download/', '_blank');
+                const install = confirm('MetaMask not installed. Would you like to install it?');
+                if (install) {
+                    window.open('https://metamask.io/download/', '_blank');
+                }
                 throw new Error('MetaMask not installed');
             }
 
@@ -25,7 +159,11 @@ export const WalletService = {
                 throw new Error('No accounts found');
             }
 
-            const account = accounts[0];
+            // Setup listeners if not already setup
+            this.setupEventListeners();
+
+            // Handle accounts
+            await this.handleAccountsChanged(accounts);
 
             // Check network
             const chainId = await window.ethereum.request({ 
@@ -37,8 +175,8 @@ export const WalletService = {
                 await this.switchNetwork();
             }
 
-            showAlert('success', `Wallet connected: ${this.formatAddress(account)}`);
-            return account;
+            showAlert('success', `Wallet connected: ${this.formatAddress(walletState.address)}`);
+            return walletState.address;
         } catch (error) {
             console.error('Wallet connection error:', error);
             if (error.code === 4001) {
@@ -51,10 +189,30 @@ export const WalletService = {
     },
 
     // Disconnect wallet
-    disconnect() {
-        // Note: MetaMask doesn't have a programmatic disconnect
-        // We just clear local references
-        showAlert('success', 'Wallet disconnected');
+    async disconnect() {
+        try {
+            // Note: MetaMask doesn't have a programmatic disconnect
+            // We just clear local state and notify backend
+            walletState.isConnected = false;
+            walletState.address = null;
+            walletState.chainId = null;
+            walletState.balance = null;
+
+            // Update backend to remove wallet address
+            if (AuthService.isAuthenticated()) {
+                try {
+                    await AuthService.updateProfile({ wallet_address: null });
+                } catch (error) {
+                    console.error('Failed to update backend:', error);
+                }
+            }
+
+            this.notifyListeners();
+            showAlert('success', 'Wallet disconnected');
+        } catch (error) {
+            console.error('Disconnect error:', error);
+            showAlert('error', 'Failed to disconnect wallet');
+        }
     },
 
     // Switch to correct network
@@ -98,16 +256,15 @@ export const WalletService = {
 
     // Get current account
     async getCurrentAccount() {
-        try {
-            if (!this.isMetaMaskInstalled()) {
-                return null;
-            }
+        if (walletState.isConnected && walletState.address) {
+            return walletState.address;
+        }
 
+        try {
             const accounts = await window.ethereum.request({ 
                 method: 'eth_accounts' 
             });
-
-            return accounts.length > 0 ? accounts[0] : null;
+            return accounts[0] || null;
         } catch (error) {
             console.error('Get current account error:', error);
             return null;
@@ -151,29 +308,16 @@ export const WalletService = {
         }
     },
 
-    // Listen to account changes
-    onAccountsChanged(callback) {
-        if (this.isMetaMaskInstalled()) {
-            window.ethereum.on('accountsChanged', (accounts) => {
-                callback(accounts[0] || null);
-            });
-        }
-    },
-
-    // Listen to chain changes
-    onChainChanged(callback) {
-        if (this.isMetaMaskInstalled()) {
-            window.ethereum.on('chainChanged', (chainId) => {
-                callback(chainId);
-                // Reload the page on chain change (recommended by MetaMask)
-                window.location.reload();
-            });
-        }
-    },
-
     // Format address (0x1234...5678)
     formatAddress(address) {
         if (!address) return '';
         return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
     },
 };
+
+// Initialize wallet on page load
+if (typeof window !== 'undefined') {
+    window.addEventListener('load', () => {
+        WalletService.initialize();
+    });
+}
