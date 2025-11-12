@@ -3,121 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blockchain AI LMS - Next-Gen Learning Platform</title>
+    <title>Blockchain-Powered LMS</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
+    <div class="navbar">
         <div class="navbar-content">
-            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <a href="index.html" class="navbar-brand">🎓 Blockchain LMS</a>
             <div class="navbar-links">
-                <a href="#features" class="navbar-link">Features</a>
+                <a href="courses.html" class="navbar-link">Courses</a>
                 <a href="login.html" class="navbar-link">Login</a>
-                <a href="register.html" class="btn btn-primary">Get Started</a>
+                <a href="register.html" class="navbar-link btn btn-primary">Get Started</a>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <!-- Landing Hero Section -->
-    <section class="landing">
-        <div class="landing-hero">
-            <h1 class="landing-title">Learn, Earn & Verify</h1>
-            <p class="landing-subtitle">
-                Experience next-generation learning with AI-powered recommendations, 
-                blockchain-verified certificates, and token-based rewards. 
-                Build skills that matter in the decentralized future.
-            </p>
-            <div class="landing-cta">
-                <a href="register.html" class="btn btn-primary">Start Learning Free</a>
-                <a href="login.html" class="btn btn-secondary">Sign In</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="section" id="features">
+    <div class="hero-section">
         <div class="container">
-            <h2 class="text-center mb-lg">Platform Features</h2>
-            <div class="features-grid">
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">AI-Powered Recommendations</h3>
-                    <p class="feature-description">
-                        Personalized learning paths tailored to your goals, progress, and preferences. 
-                        Discover courses that match your learning style.
-                    </p>
-                </div>
-                
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">🔗</div>
-                    <h3 class="feature-title">Blockchain Certificates</h3>
-                    <p class="feature-description">
-                        Globally verifiable, tamper-proof credentials stored on-chain. 
-                        Your achievements are permanently recorded and recognized worldwide.
-                    </p>
-                </div>
-                
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">💎</div>
-                    <h3 class="feature-title">Token Rewards</h3>
-                    <p class="feature-description">
-                        Earn learning tokens for completing courses, quizzes, and milestones. 
-                        Use tokens to unlock premium content and courses.
-                    </p>
-                </div>
-                
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Progress Tracking</h3>
-                    <p class="feature-description">
-                        Real-time dashboards showing your enrolled courses, completion stats, 
-                        learning streaks, and earned achievements.
-                    </p>
-                </div>
-                
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">💳</div>
-                    <h3 class="feature-title">Flexible Payments</h3>
-                    <p class="feature-description">
-                        Purchase premium courses via Stripe or blockchain payments. 
-                        Support multiple payment methods for seamless access.
-                    </p>
-                </div>
-                
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">🎓</div>
-                    <h3 class="feature-title">Expert Instructors</h3>
-                    <p class="feature-description">
-                        Learn from industry experts and verified educators. 
-                        Access high-quality content curated by professionals.
-                    </p>
+            <div class="hero-content">
+                <h1 class="hero-title">Learn with Blockchain-Powered Certificates</h1>
+                <p class="hero-subtitle">Token-gated courses, NFT certificates, and AI-powered learning</p>
+                <div class="hero-cta">
+                    <a href="register.html" class="btn btn-primary btn-lg">Start Learning</a>
+                    <a href="courses.html" class="btn btn-secondary btn-lg">Browse Courses</a>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- CTA Section -->
-    <section class="section" style="background: var(--bg-secondary);">
-        <div class="container text-center">
-            <h2>Ready to Start Learning?</h2>
-            <p class="landing-subtitle" style="margin-bottom: var(--spacing-lg);">
-                Join thousands of learners building skills with blockchain-verified credentials.
-            </p>
-            <div class="landing-cta">
-                <a href="register.html" class="btn btn-primary">Create Free Account</a>
+    <div class="container">
+        <div class="section">
+            <h2 class="text-center">Why Choose Our Platform?</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🔗</div>
+                    <div class="stat-content">
+                        <h3>Token-Gated Access</h3>
+                        <p>Purchase courses with crypto tokens</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-content">
+                        <h3>NFT Certificates</h3>
+                        <p>Verifiable on-chain credentials</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🤖</div>
+                    <div class="stat-content">
+                        <h3>AI Assistant</h3>
+                        <p>24/7 intelligent learning support</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-content">
+                        <h3>Instant Enrollment</h3>
+                        <p>Auto-enrollment via smart contracts</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Scripts -->
+    <div id="alert-container"></div>
+
     <script src="js/utils.js"></script>
-    <script>
-        // Redirect to dashboard if user is not admin
-        if (window.utils && window.utils.getUser() && window.utils.isAuthenticated()) {
-            window.utils.redirectTo('dashboard.html');
-        }
-    </script>
 </body>
 </html>
-

@@ -1,0 +1,101 @@
+# Docker Compose for Local Development Services Only
+# This runs essential services (DB, Redis, Qdrant, Hardhat) via Docker
+# while allowing Django to run locally for faster development iteration
+#
+# Usage:
+#   1. Copy .env.example to .env and edit values
+#   2. Run: docker compose -f docker-compose.dev.yml up -d
+#   3. Run Django locally: python src/manage.py runserver
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: lms-postgres-dev
+    environment:
+      POSTGRES_DB: lms_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # pgAdmin for Database Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: lms-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data_dev:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Redis for Caching and Celery Broker
+  redis:
+    image: redis:7-alpine
+    container_name: lms-redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Qdrant Vector Database for RAG/Chatbot
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: lms-qdrant-dev
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"   # gRPC API
+    volumes:
+      - qdrant_storage_dev:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+
+  # Hardhat Local Blockchain Node
+  hardhat:
+    image: node:18-alpine
+    container_name: lms-hardhat-dev
+    working_dir: /app
+    command: sh -c "npm install && npx hardhat node --hostname 0.0.0.0"
+    volumes:
+      - ./src/services/blockchain_service/hardhat:/app
+    ports:
+      - "8545:8545"  # Ethereum JSON-RPC
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
+volumes:
+  postgres_data_dev:
+  pgadmin_data_dev:
+  redis_data_dev:
+  qdrant_storage_dev:
+
+networks:
+  default:
+    name: lms-dev-network

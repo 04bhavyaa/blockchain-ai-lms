@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_simplejwt.token_blacklist',
     
     # Third party
     'rest_framework',
@@ -50,7 +51,7 @@ INSTALLED_APPS = [
     'src.services.ai_recommendations',
     'src.services.auth_service',
     'src.services.blockchain_service',
-    # 'src.services.chatbot_service',
+    'src.services.chatbot_service',  
     'src.services.courses_service',
     'src.services.payment_service',
     'src.services.progress_service',
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -81,33 +83,25 @@ TEMPLATES = [
         },
     },
 ]
+
 WSGI_APPLICATION = 'src.wsgi.application'
 
-# Database Configuration - Use SQLite for development
+# Database Configuration
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'lms_db'),
+        'USER': os.getenv('DB_USER', 'postgres'), 
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),  
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+        },
     }
 }
 
-# # Database [web:157]
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME', 'lms_db'),
-#         'USER': os.getenv('DB_USER', 'postgres'),
-#         'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-#         'HOST': os.getenv('DB_HOST', 'localhost'),
-#         'PORT': os.getenv('DB_PORT', '5432'),
-#         'CONN_MAX_AGE': 600,
-#         'OPTIONS': {
-#             'connect_timeout': 10,
-#         }
-#     }
-# }
-
-# Custom User Model [web:158]
+# Custom User Model
 AUTH_USER_MODEL = 'users.CustomUser'
 
 # Password validation
@@ -133,7 +127,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# REST Framework Configuration [web:76][web:163]
+# REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -160,7 +154,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'    
 }
 
-# JWT Configuration [web:76][web:163]
+# JWT Configuration
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -186,7 +180,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
-
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -252,19 +245,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
 # Cache Configuration
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django_redis.cache.RedisCache',
-#         'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
-#         'OPTIONS': {
-#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-#             'SOCKET_CONNECT_TIMEOUT': 5,
-#             'SOCKET_TIMEOUT': 5,
-#             'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-#         }
-#     }
-# }
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -276,15 +256,54 @@ CACHES = {
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 
-# Blockchain Configuration
+# ========================================
+# Blockchain Configuration (UPDATED)
+# ========================================
+BLOCKCHAIN_ENABLED = os.getenv('BLOCKCHAIN_ENABLED', 'False') == 'True'
+WEB3_PROVIDER_URL = os.getenv('WEB3_PROVIDER_URL', 'http://localhost:8545')
+BLOCKCHAIN_NETWORK = os.getenv('BLOCKCHAIN_NETWORK', 'localhost')
+
+# Contract addresses (from deploy.js output)
+TOKEN_CONTRACT_ADDRESS = os.getenv('TOKEN_CONTRACT_ADDRESS', '')
+CERTIFICATE_CONTRACT_ADDRESS = os.getenv('CERTIFICATE_CONTRACT_ADDRESS', '')
+AP2_CONTRACT_ADDRESS = os.getenv('AP2_CONTRACT_ADDRESS', '')
+
+# Platform wallet credentials
+PLATFORM_PRIVATE_KEY = os.getenv('PLATFORM_PRIVATE_KEY', '')
+TREASURY_ADDRESS = os.getenv('TREASURY_ADDRESS', '')
+
+# Legacy blockchain settings (can be removed if not used)
 WEB3_SEPOLIA_RPC = os.getenv('WEB3_SEPOLIA_RPC', 'https://sepolia.infura.io/v3/')
 WEB3_POLYGON_RPC = os.getenv('WEB3_POLYGON_RPC', 'https://polygon-rpc.com')
-LMS_TOKEN_CONTRACT = os.getenv('LMS_TOKEN_CONTRACT', '')
-LMS_CERTIFICATE_CONTRACT = os.getenv('LMS_CERTIFICATE_CONTRACT', '')
-PLATFORM_TREASURY_ADDRESS = os.getenv('PLATFORM_TREASURY_ADDRESS', '')
+LMS_TOKEN_CONTRACT = os.getenv('LMS_TOKEN_CONTRACT', '')  # Deprecated
+LMS_CERTIFICATE_CONTRACT = os.getenv('LMS_CERTIFICATE_CONTRACT', '')  # Deprecated
+PLATFORM_TREASURY_ADDRESS = os.getenv('PLATFORM_TREASURY_ADDRESS', '')  # Deprecated
 
-# Google API
+# ========================================
+# Chatbot / RAG Configuration (UPDATED)
+# ========================================
+# Google Gemini API
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
 
+# Qdrant Vector Database
+QDRANT_URL = os.getenv('QDRANT_URL', 'http://localhost:6333')
+QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
+QDRANT_PORT = int(os.getenv('QDRANT_PORT', 6333))
+
+# Redis for chat history
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
+
+# Path to project documentation for RAG
+PROJECT_DOC_PATH = os.getenv('PROJECT_DOC_PATH', str(BASE_DIR / 'docs' / 'project_info.txt'))
+
+# LangSmith Tracing (Optional)
+LANGSMITH_TRACING = os.getenv('LANGSMITH_TRACING', 'False') == 'True'
+LANGSMITH_ENDPOINT = os.getenv('LANGSMITH_ENDPOINT', 'https://api.smith.langchain.com')
+LANGSMITH_API_KEY = os.getenv('LANGSMITH_API_KEY', '')
+LANGSMITH_PROJECT = os.getenv('LANGSMITH_PROJECT', 'rag-model')
+HF_TOKEN = os.getenv('HF_TOKEN', '')
+
+# ========================================
 # Pagination
+# ========================================
 PAGINATION_PAGE_SIZE = 20

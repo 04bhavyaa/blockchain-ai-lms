@@ -1,56 +1,45 @@
-# Blockchain AI LMS - Dependencies for uv
-# Install with: uv pip install -r requirements.txt
+#########################################
+# Core (lightweight) requirements
+#########################################
+# NOTE: This file intentionally lists the core packages needed to run the web API.
+# Heavy AI packages (torch, sentence-transformers, langchain, etc.) are commented
+# out below — install them separately in a dev environment when needed.
 
-# Django & REST Framework
-Django
-django-celery-beat
-django-celery-results
-django-cors-headers
-django-filter
-django-redis
+Django>=5.2,<6
 djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
+django-cors-headers
+django-filter
+django-redis
+django-celery-beat
+django-celery-results
+psycopg2-binary
+celery
+redis
+uvicorn
 
-# LangChain & LangGraph
+web3
+eth-account
+stripe
+Pillow
+python-dotenv
+python-dateutil
+
+#########################################
+# Optional / heavy AI & vector DB packages
+#########################################
+# Install these only if you need RAG/vector/embeddings functionality. They are
+# large and can significantly increase build time and image size.
+# Example: pip install -r requirements-ai.txt
+#
 langchain
 langchain-community
-langchain-core
 langchain-google-genai
-langchain-text-splitters
-langgraph
-
-# AI & Machine Learning
 google-generativeai
+qdrant-client
+sentence-transformers
+torch
 scikit-learn
 scipy
 
-# Vector Database & Embeddings
-chromadb
-tiktoken
-
-# Database
-psycopg2-binary
-
-# Redis & Caching
-hiredis
-redis
-
-# Task Queue
-celery
-
-# Blockchain & Web3
-web3
-
-# Payments
-stripe
-
-# Utilities
-Pillow
-pydantic
-python-dateutil
-python-decouple
-python-dotenv
-
-# Server
-uvicorn

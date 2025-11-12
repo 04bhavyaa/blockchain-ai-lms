@@ -3,268 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Detail - Blockchain AI LMS</title>
+    <title>Course Details - LMS</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .course-detail-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 100px var(--spacing-md) var(--spacing-xl);
-        }
-
-        .course-hero {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-            border: 1px solid var(--border-color);
-        }
-
-        .course-hero-content {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: var(--spacing-xl);
-        }
-
-        .course-cover {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 12px;
-            margin-bottom: var(--spacing-md);
-        }
-
-        .course-title {
-            font-size: 2.5rem;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .course-meta-info {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-            margin-bottom: var(--spacing-md);
-            color: var(--text-secondary);
-        }
-
-        .course-description {
-            color: var(--text-secondary);
-            line-height: 1.8;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .course-sidebar {
-            background: var(--bg-tertiary);
-            padding: var(--spacing-lg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            height: fit-content;
-            position: sticky;
-            top: 100px;
-        }
-
-        .course-price-large {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .course-free-large {
-            color: var(--success);
-        }
-
-        .enroll-btn {
-            width: 100%;
-            margin-bottom: var(--spacing-md);
-        }
-
-        .course-info-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .course-info-list li {
-            padding: var(--spacing-sm) 0;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .course-info-list li:last-child {
-            border-bottom: none;
-        }
-
-        .course-section {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            border: 1px solid var(--border-color);
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            margin-bottom: var(--spacing-md);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .module-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .module-item {
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .module-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .module-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .lesson-list {
-            margin-top: var(--spacing-sm);
-            padding-left: var(--spacing-md);
-            display: none;
-        }
-
-        .lesson-list.expanded {
-            display: block;
-        }
-
-        .lesson-item {
-            padding: var(--spacing-sm);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .rating-section {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .star-rating {
-            color: #fbbf24;
-            font-size: 1.5rem;
-        }
-    </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
+    <div class="navbar">
         <div class="navbar-content">
-            <a href="index.html" class="navbar-brand">Blockchain AI LMS</a>
+            <a href="index.html" class="navbar-brand">🎓 Blockchain LMS</a>
             <div class="navbar-links">
                 <a href="dashboard.html" class="navbar-link">Dashboard</a>
                 <a href="courses.html" class="navbar-link">Courses</a>
+                <a href="chatbot.html" class="navbar-link">AI Assistant</a>
                 <a href="profile.html" class="navbar-link">Profile</a>
-                <button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: var(--spacing-sm);">Logout</button>
+                <a href="#" class="navbar-link" onclick="logout()">Logout</a>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <!-- Course Detail Content -->
-    <div class="course-detail-container">
-        <div id="course-loading" class="loading-spinner" style="display: flex; justify-content: center; padding: var(--spacing-xl);">
-            <div class="loading"></div>
+    <div class="container course-detail-container">
+        <div id="course-loading" class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading course details...</p>
         </div>
 
-        <div id="course-content" style="display: none;">
-            <!-- Course Hero -->
+        <div id="course-content" class="hidden">
             <div class="course-hero">
-                <img id="course-cover" src="" alt="Course Cover" class="course-cover">
-                
                 <div class="course-hero-content">
-                    <div>
-                        <h1 class="course-title" id="course-title">Loading...</h1>
-                        <div class="course-meta-info">
-                            <span id="course-instructor">By Instructor</span>
-                            <span>⭐ <span id="course-rating">0</span>/5</span>
-                            <span>👥 <span id="course-enrollments">0</span> students</span>
-                            <span>📚 <span id="course-duration">0</span> hours</span>
-                            <span id="course-difficulty-badge"></span>
-                        </div>
-                        <p class="course-description" id="course-description">Loading course description...</p>
+                    <div class="course-breadcrumb">
+                        <a href="courses.html">Courses</a> / <span id="course-category">Category</span>
                     </div>
+                    <h1 id="course-title">Course Title</h1>
+                    <p id="course-description" class="course-description-text">Course description...</p>
                     
-                    <div class="course-sidebar">
-                        <div class="course-price-large" id="course-price">Loading...</div>
-                        <button id="enroll-btn" class="btn btn-primary enroll-btn">Enroll Now</button>
-                        <button id="bookmark-btn" class="btn btn-outline" style="width: 100%; margin-bottom: var(--spacing-md);">
-                            <span id="bookmark-text">Bookmark</span>
-                        </button>
-                        <ul class="course-info-list">
-                            <li>
-                                <span>Status:</span>
-                                <strong id="course-status">-</strong>
-                            </li>
-                            <li>
-                                <span>Category:</span>
-                                <strong id="course-category">-</strong>
-                            </li>
-                            <li>
-                                <span>Modules:</span>
-                                <strong id="course-modules-count">-</strong>
-                            </li>
-                            <li>
-                                <span>Access Type:</span>
-                                <strong id="course-access-type">-</strong>
-                            </li>
-                        </ul>
+                    <div class="course-meta">
+                        <span class="meta-item">
+                            <strong>👤 Instructor:</strong> <span id="course-instructor">Name</span>
+                        </span>
+                        <span class="meta-item">
+                            <strong>⏱️ Duration:</strong> <span id="course-duration">Duration</span>
+                        </span>
+                        <span class="meta-item">
+                            <strong>📊 Level:</strong> <span id="course-level">Level</span>
+                        </span>
                     </div>
+
+                    <div class="course-price-section">
+                        <div id="token-price-display" class="token-price hidden">
+                            <div class="price-tag">
+                                <span class="price-amount" id="token-price">0</span>
+                                <span class="price-currency">LMSCT</span>
+                            </div>
+                            <div class="blockchain-badge">
+                                <span class="badge badge-blockchain">🔗 Token-Gated</span>
+                            </div>
+                        </div>
+
+                        <div id="free-price-display" class="free-price hidden">
+                            <span class="badge badge-free">FREE</span>
+                        </div>
+
+                        <button id="enroll-btn" class="btn btn-primary btn-lg" onclick="handleEnrollment()">
+                            Enroll Now
+                        </button>
+
+                        <div id="wallet-prompt" class="wallet-prompt hidden">
+                            <p>⚠️ Connect your wallet to purchase this token-gated course</p>
+                            <button class="btn btn-secondary" onclick="window.wallet.connect()">
+                                Connect MetaMask
+                            </button>
+                        </div>
+
+                        <div id="wallet-balance-display" class="wallet-balance-info hidden">
+                            <p>💰 Your Balance: <strong id="user-token-balance">0 LMSCT</strong></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="course-hero-image">
+                    <img id="course-thumbnail" src="" alt="Course Thumbnail" class="course-thumbnail-img" />
                 </div>
             </div>
 
-            <!-- Course Modules -->
-            <div class="course-section">
-                <h2 class="section-title">Course Content</h2>
-                <ul class="module-list" id="modules-list">
-                    <!-- Modules will be loaded here -->
-                </ul>
+            <div class="course-tabs">
+                <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+                <button class="tab-btn" onclick="showTab('curriculum')">Curriculum</button>
+                <button class="tab-btn" onclick="showTab('reviews')">Reviews</button>
             </div>
 
-            <!-- Ratings Section -->
-            <div class="course-section">
-                <h2 class="section-title">Ratings & Reviews</h2>
-                <div class="rating-section">
-                    <div class="star-rating">★★★★★</div>
-                    <span><strong id="average-rating">0</strong>/5</span>
-                    <span style="color: var(--text-secondary);">(<span id="total-ratings">0</span> ratings)</span>
+            <div class="tab-content">
+                <div id="overview-tab" class="tab-pane active">
+                    <div class="card">
+                        <h2>About This Course</h2>
+                        <div id="course-full-description"></div>
+                    </div>
+                </div>
+
+                <div id="curriculum-tab" class="tab-pane hidden">
+                    <div class="card">
+                        <h2>Course Curriculum</h2>
+                        <div id="course-modules-list"></div>
+                    </div>
+                </div>
+
+                <div id="reviews-tab" class="tab-pane hidden">
+                    <div class="card">
+                        <h2>Student Reviews</h2>
+                        <div id="course-reviews-list"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/utils.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <!-- Ethers (UMD) for Web3 interactions -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <div id="alert-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
     <script src="js/web3_config.js"></script>
     <script src="js/contracts.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/course-detail.js"></script>
+
     <script>
-        // Check authentication
-        if (!window.utils || !window.utils.isAuthenticated()) {
-            window.utils.redirectTo('login.html');
-        }
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(tabName + '-tab').classList.remove('hidden');
+        event.target.classList.add('active');
+    }
+
+    function logout() {
+        window.utils.logout();
+    }
     </script>
 </body>
 </html>
-

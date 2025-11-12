@@ -5,22 +5,23 @@ Admin service views
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from src.shared import require_admin, log_action
-from src.shared.exceptions import PermissionDeniedError, ResourceNotFoundError
+from src.shared.decorators import log_action
 from django.contrib.auth import get_user_model
+import logging
 
 from .models import AdminDashboardLog, FraudDetectionLog, AdminSettings, SystemMetrics
 from .serializers import (
     UserDetailSerializer, UserListSerializer, UpdateUserSerializer,
     AdminDashboardLogSerializer, FraudDetectionLogSerializer,
     UpdateFraudStatusSerializer, AdminSettingsSerializer,
-    SystemMetricsSerializer, DashboardStatsSerializer
+    SystemMetricsSerializer
 )
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -33,7 +34,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return UserListSerializer
-        elif self.action == 'update' or self.action == 'partial_update':
+        elif self.action in ['update', 'partial_update']:
             return UpdateUserSerializer
         return UserDetailSerializer
     
@@ -81,16 +82,6 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
-        AdminDashboardLog.objects.create(
-            admin_user=request.user,
-            action_type='user_updated',
-            target_type='user',
-            target_id=user.id,
-            description=f"Updated user {user.email}",
-            ip_address=self._get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', '')
-        )
-        
         return Response({'status': 'success', 'data': serializer.data})
     
     @action(detail=True, methods=['post'])
@@ -104,17 +95,6 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         user.banned_reason = reason
         user.save()
         
-        AdminDashboardLog.objects.create(
-            admin_user=request.user,
-            action_type='user_banned',
-            target_type='user',
-            target_id=user.id,
-            description=f"Banned user {user.email}",
-            ip_address=self._get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            metadata={'reason': reason}
-        )
-        
         return Response({'status': 'success', 'message': f"User {user.email} banned successfully"})
     
     @action(detail=True, methods=['post'])
@@ -126,16 +106,6 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         user.banned_reason = None
         user.save()
         
-        AdminDashboardLog.objects.create(
-            admin_user=request.user,
-            action_type='user_updated',
-            target_type='user',
-            target_id=user.id,
-            description=f"Unbanned user {user.email}",
-            ip_address=self._get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', '')
-        )
-        
         return Response({'status': 'success', 'message': f"User {user.email} unbanned successfully"})
     
     @action(detail=True, methods=['delete'])
@@ -146,23 +116,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         email = user.email
         user.delete()
         
-        AdminDashboardLog.objects.create(
-            admin_user=request.user,
-            action_type='user_deleted',
-            target_type='user',
-            target_id=pk,
-            description=f"Deleted user {email}",
-            ip_address=self._get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', '')
-        )
-        
         return Response({'status': 'success', 'message': f"User {email} deleted successfully"})
-    
-    def _get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            return x_forwarded_for.split(',')[0]
-        return request.META.get('REMOTE_ADDR')
 
 
 class AdminLogsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -313,7 +267,7 @@ class DashboardStatsViewSet(viewsets.ViewSet):
     
     permission_classes = [IsAdminUser]
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsAdminUser])
+    @action(detail=False, methods=['get'])
     def overview(self, request):
         """Get dashboard overview stats - calculated in real-time"""
         from django.db.models import Count, Sum, Q
@@ -368,8 +322,8 @@ class DashboardStatsViewSet(viewsets.ViewSet):
                 'recent_logs': AdminDashboardLogSerializer(recent_logs, many=True).data
             }
             
-            serializer = DashboardStatsSerializer(data)
-            return Response({'status': 'success', 'data': serializer.data})
+            return Response({'status': 'success', 'data': data})
+            
         except Exception as e:
             logger.error(f"Error calculating dashboard stats: {str(e)}", exc_info=True)
             # Return defaults on error
@@ -384,5 +338,4 @@ class DashboardStatsViewSet(viewsets.ViewSet):
                 'pending_certificates': 0,
                 'recent_logs': []
             }
-            serializer = DashboardStatsSerializer(data)
-            return Response({'status': 'success', 'data': serializer.data})
+            return Response({'status': 'success', 'data': data})

@@ -1,215 +1,219 @@
 /**
- * Chatbot functionality
+ * Simplified Chatbot with FAQ Bubbles & RAG
  */
-
-let currentConversationId = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    loadConversations();
+    window.utils.requireAuth();
+    loadFAQBubbles();
+    loadChatHistory();
+    setupEnterKeyListener();
 });
 
-// Load conversations list
-async function loadConversations() {
-    const container = document.getElementById('conversations-list');
+// Load FAQ bubbles (5 quick questions)
+async function loadFAQBubbles() {
+    const container = document.getElementById('faq-bubbles');
     if (!container) return;
 
     try {
-        const response = await window.api.getConversations();
-        // Handle both direct data array and wrapped response
-        const conversations = response.data || response || [];
-        
-        if (conversations && conversations.length > 0) {
-            container.innerHTML = conversations.map(conv => `
-                <div class="conversation-item ${conv.id === currentConversationId ? 'active' : ''}" 
-                     onclick="loadConversation(${conv.id})">
-                    <div class="conversation-title">${conv.title || 'Untitled'}</div>
-                    <div class="conversation-preview">${conv.description || conv.last_message || 'No messages yet'}</div>
-                </div>
+        const response = await window.api.getFAQs();
+        const faqs = response.data || response || [];
+
+        if (faqs.length > 0) {
+            container.innerHTML = faqs.map(faq => `
+                <button 
+                    class="faq-bubble" 
+                    onclick="handleFAQClick(${faq.id}, '${escapeHtml(faq.question)}')"
+                >
+                    ${faq.question}
+                </button>
             `).join('');
         } else {
-            container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: var(--spacing-md);">No conversations yet. Create a new one!</p>';
+            container.innerHTML = '<p class="text-muted">No quick questions available</p>';
         }
     } catch (error) {
-        console.error('Error loading conversations:', error);
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: var(--spacing-md);">No conversations yet. Create a new one!</p>';
+        console.error('Error loading FAQs:', error);
+        container.innerHTML = '<p class="text-error">Failed to load quick questions</p>';
     }
 }
 
-// Create new conversation
-async function createNewConversation() {
-    const title = prompt('Enter conversation title:', 'New Conversation');
-    if (!title) return;
-
-    try {
-        const response = await window.api.createConversation(title);
-        // Handle both wrapped and direct response
-        const conversationId = response.data?.id || response.id || response.data?.data?.id;
-        if (conversationId) {
-            loadConversations();
-            loadConversation(conversationId);
-        } else {
-            showAlert('error', 'Failed to create conversation');
-        }
-    } catch (error) {
-        showAlert('error', error.message || 'Failed to create conversation');
-    }
-}
-
-// Load conversation messages
-async function loadConversation(conversationId) {
-    currentConversationId = conversationId;
-    loadConversations(); // Refresh to highlight active
-    
+// Load chat history
+async function loadChatHistory() {
     const messagesContainer = document.getElementById('chat-messages');
-    const input = document.getElementById('message-input');
-    const sendBtn = document.getElementById('send-btn');
-    
+    if (!messagesContainer) return;
+
     try {
-        const response = await window.api.getConversation(conversationId);
-        // Handle both wrapped and direct response
-        const conversation = response.data || response;
-        
-        if (conversation) {
-            document.getElementById('conversation-title').textContent = conversation.title || 'Conversation';
-            
-            // Enable input - make sure it's not disabled
-            if (input) {
-                input.disabled = false;
-                input.removeAttribute('disabled');
-                input.focus();
-            }
-            if (sendBtn) {
-                sendBtn.disabled = false;
-                sendBtn.removeAttribute('disabled');
-            }
-            
-            // Load messages - handle both direct messages array and nested structure
-            const messages = conversation.messages || [];
-            if (messages && messages.length > 0) {
-                messagesContainer.innerHTML = messages.map(msg => renderMessage(msg)).join('');
-            } else {
-                messagesContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: var(--spacing-xl);">No messages yet. Start the conversation!</div>';
-            }
-            
+        const response = await window.api.getChatHistory();
+        const messages = response.data || response || [];
+
+        if (messages.length > 0) {
+            // Clear welcome message
+            messagesContainer.innerHTML = messages.map(msg => renderMessage(msg)).join('');
             scrollToBottom();
         }
     } catch (error) {
-        console.error('Error loading conversation:', error);
-        messagesContainer.innerHTML = '<div style="text-align: center; color: var(--text-error); padding: var(--spacing-xl);">Failed to load conversation</div>';
-        // Still enable input on error
-        if (input) {
-            input.disabled = false;
-            input.removeAttribute('disabled');
-        }
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.removeAttribute('disabled');
-        }
+        console.error('Error loading chat history:', error);
     }
 }
 
-// Render message
-function renderMessage(message) {
-    const isUser = message.role === 'user';
-    const time = new Date(message.created_at).toLocaleTimeString();
+// Handle FAQ bubble click
+async function handleFAQClick(faqId, question) {
+    // Disable all FAQ bubbles during request
+    disableFAQBubbles(true);
+
+    // Add user message to UI
+    addMessageToUI('user', question);
+
+    try {
+        const response = await window.api.sendChatMessage({
+            faq_id: faqId,
+            message: question
+        });
+
+        const assistantMessage = response.message || response.data?.message || 'Sorry, I couldn\'t process that.';
+        addMessageToUI('assistant', assistantMessage);
+    } catch (error) {
+        console.error('Error sending FAQ:', error);
+        addMessageToUI('assistant', 'Sorry, something went wrong. Please try again.');
+    } finally {
+        disableFAQBubbles(false);
+    }
+}
+
+// Send custom message
+async function sendMessage() {
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+
+    if (!message) {
+        showAlert('error', 'Please enter a message');
+        return;
+    }
+
+    // Disable input during request
+    setInputState(true);
+
+    // Add user message to UI
+    addMessageToUI('user', message);
+    input.value = '';
+
+    try {
+        const response = await window.api.sendChatMessage({
+            message: message
+        });
+
+        const assistantMessage = response.message || response.data?.message || 'Sorry, I couldn\'t process that.';
+        addMessageToUI('assistant', assistantMessage);
+    } catch (error) {
+        console.error('Error sending message:', error);
+        addMessageToUI('assistant', 'Sorry, something went wrong. Please try again.');
+    } finally {
+        setInputState(false);
+        input.focus();
+    }
+}
+
+// Add message to UI
+function addMessageToUI(role, content) {
+    const messagesContainer = document.getElementById('chat-messages');
     
+    // Remove welcome message if exists
+    const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+    if (welcomeMsg) {
+        welcomeMsg.remove();
+    }
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role}-message`;
+    messageDiv.innerHTML = `
+        <div class="message-content">
+            <div class="message-role">${role === 'user' ? '👤 You' : '🤖 Assistant'}</div>
+            <div class="message-text">${escapeHtml(content)}</div>
+            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+// Render message from history
+function renderMessage(msg) {
+    const role = msg.role || 'user';
+    const content = msg.content || '';
+    const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+
     return `
-        <div class="message ${message.role}">
-            <div>
-                <div class="message-content">
-                    ${escapeHtml(message.content)}
-                </div>
-                <div class="message-time">${time}</div>
+        <div class="chat-message ${role}-message">
+            <div class="message-content">
+                <div class="message-role">${role === 'user' ? '👤 You' : '🤖 Assistant'}</div>
+                <div class="message-text">${escapeHtml(content)}</div>
+                <div class="message-time">${timestamp}</div>
             </div>
         </div>
     `;
 }
 
-// Send message
-async function handleSendMessage(event) {
-    event.preventDefault();
-    
+// Utility functions
+function setInputState(loading) {
     const input = document.getElementById('message-input');
-    const message = input.value.trim();
-    
-    if (!message || !currentConversationId) return;
-    
     const sendBtn = document.getElementById('send-btn');
-    const messagesContainer = document.getElementById('chat-messages');
-    
-    // Add user message to UI immediately
-    const userMessage = {
-        role: 'user',
-        content: message,
-        created_at: new Date().toISOString()
-    };
-    
-    if (messagesContainer.querySelector('.message')) {
-        messagesContainer.innerHTML += renderMessage(userMessage);
+    const sendText = document.getElementById('send-btn-text');
+    const sendLoading = document.getElementById('send-btn-loading');
+
+    if (loading) {
+        input.disabled = true;
+        sendBtn.disabled = true;
+        sendText.classList.add('hidden');
+        sendLoading.classList.remove('hidden');
     } else {
-        messagesContainer.innerHTML = renderMessage(userMessage);
-    }
-    
-    input.value = '';
-    sendBtn.disabled = true;
-    scrollToBottom();
-    
-    try {
-        const response = await window.api.sendChatMessage(message, currentConversationId);
-        
-        if (response.status === 'success' && response.data) {
-            // Add assistant response
-            const assistantMessage = {
-                role: 'assistant',
-                content: response.data.response || response.data.message || 'I received your message.',
-                created_at: new Date().toISOString()
-            };
-            
-            messagesContainer.innerHTML += renderMessage(assistantMessage);
-            scrollToBottom();
-            
-            // Reload conversations to update preview
-            loadConversations();
-        }
-    } catch (error) {
-        console.error('Error sending message:', error);
-        const errorMessage = {
-            role: 'assistant',
-            content: `Error: ${error.message || 'Failed to send message. Please try again.'}`,
-            created_at: new Date().toISOString()
-        };
-        messagesContainer.innerHTML += renderMessage(errorMessage);
-        scrollToBottom();
-    } finally {
+        input.disabled = false;
         sendBtn.disabled = false;
-        input.focus();
+        sendText.classList.remove('hidden');
+        sendLoading.classList.add('hidden');
     }
 }
 
-// Scroll to bottom
+function disableFAQBubbles(disabled) {
+    document.querySelectorAll('.faq-bubble').forEach(bubble => {
+        bubble.disabled = disabled;
+        if (disabled) {
+            bubble.style.opacity = '0.5';
+            bubble.style.cursor = 'not-allowed';
+        } else {
+            bubble.style.opacity = '1';
+            bubble.style.cursor = 'pointer';
+        }
+    });
+}
+
 function scrollToBottom() {
-    const messagesContainer = document.getElementById('chat-messages');
-    if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    const container = document.getElementById('chat-messages');
+    container.scrollTop = container.scrollHeight;
+}
+
+function setupEnterKeyListener() {
+    const input = document.getElementById('message-input');
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
     }
 }
 
-// Escape HTML
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// Show alert - use centralized utility
 function showAlert(type, message) {
-    if (window.utils && window.utils.showAlert) {
-        window.utils.showAlert(type, message);
-    }
+    alert(message);
 }
 
-// Make functions available globally
-window.createNewConversation = createNewConversation;
-window.loadConversation = loadConversation;
-
+function logout() {
+    window.utils.logout();
+}

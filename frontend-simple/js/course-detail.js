@@ -160,7 +160,12 @@ function toggleModule(index) {
     }
 }
 
-// Handle enrollment
+/**
+ * Handle course enrollment with token payment
+ */
+/**
+ * Handle course enrollment with token payment
+ */
 async function handleEnrollment() {
     const enrollBtn = document.getElementById('enroll-btn');
     if (!enrollBtn) return;
@@ -168,99 +173,110 @@ async function handleEnrollment() {
     window.utils.setLoading(enrollBtn, true);
     
     try {
+        // Check if wallet is connected
+        const account = await window.wallet.getAccount();
+        if (!account) {
+            const shouldConnect = confirm('You need to connect your MetaMask wallet to purchase this course. Connect now?');
+            if (shouldConnect) {
+                await window.wallet.connect();
+                // Retry after connection
+                return handleEnrollment();
+            } else {
+                throw new Error('Wallet connection required for token-gated courses');
+            }
+        }
+        
         // Handle different access types
-        if (courseData && courseData.access_type === 'paid') {
-            // For paid courses, show payment option or redirect
-            const priceUsd = parseFloat(courseData.price_usd) || 0;
-            const confirmPayment = confirm(`This course costs $${priceUsd.toFixed(2)}. Would you like to proceed with payment?`);
+        if (courseData && courseData.access_type === 'token') {
+            // TOKEN-GATED PURCHASE FLOW
+            const requiredTokens = parseInt(courseData.token_cost) || 1;
             
-            if (!confirmPayment) {
-                window.utils.setLoading(enrollBtn, false);
-                return;
+            window.utils.showAlert('info', `This course costs ${requiredTokens} ${window.WEB3_CONFIG.CONTRACTS.TOKEN.symbol}. Processing payment...`);
+            
+            // Step 1: Check token balance
+            const tokenBalance = await window.contracts.getTokenBalance(account);
+            if (parseFloat(tokenBalance) < requiredTokens) {
+                throw new Error(`Insufficient tokens. You need ${requiredTokens} ${window.WEB3_CONFIG.CONTRACTS.TOKEN.symbol} but only have ${parseFloat(tokenBalance).toFixed(2)}`);
             }
             
-            // For now, paid courses enroll directly (payment should be handled separately via Stripe)
-            // In production, this would redirect to Stripe Checkout or show payment form
-            showAlert('info', 'Payment integration coming soon. For now, enrollment will proceed.');
-        } else if (courseData && courseData.access_type === 'token') {
-            // Token-gated purchase flow using MetaMask
-            try {
-                const requiredTokens = parseInt(courseData.token_cost) || 0;
-
-                // 1) Request approval data from backend (spender, token_contract)
-                const approvalResp = await window.api.requestPaymentApproval(requiredTokens, courseId);
-                if (!approvalResp || approvalResp.status !== 'success') {
-                    throw new Error('Failed to get approval data from server');
-                }
-                const approvalData = approvalResp.data;
-                const tokenContractAddress = approvalData.token_contract;
-                const spenderAddress = approvalData.spender_address;
-                const amount = approvalData.amount || requiredTokens;
-
-                // 2) Ask user to approve tokens in MetaMask
-                showAlert('info', 'Please confirm the token approval in MetaMask');
-                const approveTx = await window.contracts.approveERC20(tokenContractAddress, 'ERC20', spenderAddress, amount);
-                const approveReceipt = await approveTx.wait();
-
-                // 3) Notify backend with transaction hash to confirm payment and enroll
-                const txHash = approveReceipt.transactionHash || approveReceipt.transactionHash || approveTx.hash || (approveReceipt && approveReceipt.transactionHash);
-                // Use direct request to match backend serializer fields (course_id, transaction_hash)
-                const confirmResp = await window.api.request('POST', '/blockchain/payment/confirm-payment/', {
-                    course_id: courseId,
-                    transaction_hash: txHash
-                });
-
-                if (confirmResp && confirmResp.status === 'success') {
-                    showAlert('success', confirmResp.message || 'Course unlocked via on-chain token approval');
-                    // Update UI to show enrolled
-                    enrollBtn.textContent = 'Access Course';
-                    enrollBtn.classList.remove('btn-primary');
-                    enrollBtn.classList.add('btn-secondary');
-                    enrollBtn.onclick = () => {
-                        window.utils.redirectTo(`course-content.html?courseId=${courseId}`);
-                    };
-                    // Reload course detail to reflect new enrollment
-                    setTimeout(() => loadCourseDetail(), 1000);
-                    window.utils.setLoading(enrollBtn, false);
-                    return;
-                } else {
-                    throw new Error((confirmResp && confirmResp.message) || 'Failed to confirm payment with backend');
-                }
-            } catch (err) {
-                console.error('Token payment error:', err);
-                showAlert('error', err.message || 'Token payment failed');
-                window.utils.setLoading(enrollBtn, false);
-                return;
+            // Step 2: Request approval from backend
+            const approvalResp = await window.api.requestPaymentApproval(courseId, requiredTokens);
+            if (!approvalResp || approvalResp.status !== 'success') {
+                throw new Error('Failed to initiate payment. Please try again.');
             }
+            
+            const spenderAddress = approvalResp.data.spender_address || window.WEB3_CONFIG.TREASURY_ADDRESS;
+            
+            // Step 3: Check current allowance
+            const currentAllowance = await window.contracts.checkAllowance(account, spenderAddress);
+            if (parseFloat(currentAllowance) < requiredTokens) {
+                // Need approval
+                window.utils.showAlert('info', 'Please approve token spending in MetaMask...');
+                
+                const approveTx = await window.contracts.approveERC20(spenderAddress, requiredTokens);
+                
+                window.utils.showAlert('success', 'Token approval confirmed! Now confirming payment...');
+            }
+            
+            // Step 4: Confirm payment with backend
+            const confirmResp = await window.api.confirmPayment({
+                course_id: courseId,
+                transaction_hash: approveTx ? approveTx.hash : '0x' + Date.now().toString(16)
+            });
+            
+            if (confirmResp && confirmResp.status === 'success') {
+                window.utils.showAlert('success', 'Payment confirmed! You are now enrolled in the course.');
+                
+                // Update UI
+                enrollBtn.textContent = 'Access Course';
+                enrollBtn.classList.remove('btn-primary');
+                enrollBtn.classList.add('btn-secondary');
+                enrollBtn.onclick = () => window.utils.redirectTo(`course-content.html?courseId=${courseId}`);
+                
+                // Reload course data
+                setTimeout(() => loadCourseDetail(), 1500);
+            } else {
+                throw new Error(confirmResp?.message || 'Failed to confirm payment');
+            }
+            
+        } else if (courseData && courseData.access_type === 'free') {
+            // FREE COURSE ENROLLMENT
+            const response = await window.api.enrollCourse(courseId);
+            
+            if (response.status === 'success') {
+                window.utils.showAlert('success', 'Successfully enrolled in free course!');
+                
+                enrollBtn.textContent = 'Access Course';
+                enrollBtn.classList.remove('btn-primary');
+                enrollBtn.classList.add('btn-secondary');
+                enrollBtn.onclick = () => window.utils.redirectTo(`course-content.html?courseId=${courseId}`);
+                
+                setTimeout(() => loadCourseDetail(), 1000);
+            }
+            
+        } else {
+            // PAID COURSE (Stripe/other payment)
+            window.utils.showAlert('info', 'Redirecting to payment...');
+            // Implement Stripe Checkout here
         }
         
-        // Proceed with enrollment (handles 'free', 'token', and 'paid')
-        const response = await window.api.enrollCourse(courseId);
-        
-        if (response.status === 'success') {
-            showAlert('success', response.message || 'Successfully enrolled in course!');
-            
-            // Update button
-            enrollBtn.textContent = 'Access Course';
-            enrollBtn.classList.remove('btn-primary');
-            enrollBtn.classList.add('btn-secondary');
-            enrollBtn.onclick = () => {
-                window.utils.redirectTo(`course-content.html?courseId=${courseId}`);
-            };
-            
-            // Reload course data to update enrollment status
-            setTimeout(() => loadCourseDetail(), 1000);
-        }
     } catch (error) {
+        console.error('Enrollment error:', error);
         let errorMessage = error.message || 'Failed to enroll in course';
-        if (error.data && error.data.message) {
-            errorMessage = error.data.message;
+        
+        if (error.code === 4001) {
+            errorMessage = 'Transaction rejected by user';
+        } else if (error.code === -32603) {
+            errorMessage = 'Transaction failed. Please check your token balance and try again.';
         }
-        showAlert('error', errorMessage);
+        
+        window.utils.showAlert('error', errorMessage);
     } finally {
         window.utils.setLoading(enrollBtn, false);
     }
 }
+
+
 
 // Check bookmark status
 async function checkBookmark() {

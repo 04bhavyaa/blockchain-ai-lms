@@ -476,60 +476,86 @@ class APIClient {
     }
 
 
-    async requestPaymentApproval(amount, courseId) {
+    // In api.js - Update these blockchain methods (around line 580)
+    async requestPaymentApproval(courseId, amount) {
         return this.request('POST', '/blockchain/payment/request-approval/', {
-            tokens_amount: amount,
+            course_id: courseId,  // Changed from just 'amount'
+            tokens_amount: amount
+        });
+    }
+
+    async confirmPayment(data) {
+        // Accept object with course_id and transaction_hash
+        return this.request('POST', '/blockchain/payment/confirm-payment/', {
+            course_id: data.course_id,
+            transaction_hash: data.transaction_hash
+        });
+    }
+
+    // ADD this missing method for certificate issuance
+    async issueCertificate(courseId) {
+        return this.request('POST', `/blockchain/certificates/issue-certificate/`, {
             course_id: courseId
         });
     }
 
-    async confirmPayment(txHash, paymentId) {
-        return this.request('POST', '/blockchain/payment/confirm-payment/', {
-            transaction_hash: txHash,
-            payment_id: paymentId
-        });
-    }
 
     async getPaymentHistory() {
         return this.request('GET', '/blockchain/payment/history/');
     }
 
     // ========================================
-    // Chatbot Endpoints
+    // Chatbot Endpoints 
     // ========================================
 
-    async sendChatMessage(message, conversationId = null) {
-        return this.request('POST', '/chatbot/send/', {
-            message: message,
-            conversation_id: conversationId
-        });
+    /**
+     * Get FAQ bubbles for chat interface
+     * Returns up to 5 quick questions
+     */
+    async getFAQs() {
+        console.log('[API] getFAQs() called');
+        try {
+            const response = await this.request('GET', '/chatbot/faqs/');
+            console.log('[API] getFAQs() response:', response);
+            return response;
+        } catch (error) {
+            console.error('[API] getFAQs() failed:', error);
+            throw error;
+        }
     }
 
-    async getConversations() {
-        return this.request('GET', '/chatbot/conversations-list/');
+    /**
+     * Send chat message (FAQ click or custom query)
+     * @param {Object} data - { faq_id?: number, message: string }
+     */
+    async sendChatMessage(data) {
+        console.log('[API] sendChatMessage() called with:', data);
+        try {
+            const response = await this.request('POST', '/chatbot/chat/', data);
+            console.log('[API] sendChatMessage() response:', response);
+            return response;
+        } catch (error) {
+            console.error('[API] sendChatMessage() failed:', error);
+            throw error;
+        }
     }
 
-    async getConversation(id) {
-        return this.request('GET', `/chatbot/conversations/${id}/`);
+    /**
+     * Get chat history for current user
+     * Returns all messages in user's conversation
+     */
+    async getChatHistory() {
+        console.log('[API] getChatHistory() called');
+        try {
+            const response = await this.request('GET', '/chatbot/history/');
+            console.log('[API] getChatHistory() response:', response);
+            return response;
+        } catch (error) {
+            console.error('[API] getChatHistory() failed:', error);
+            throw error;
+        }
     }
 
-    async createConversation(title = 'New Conversation') {
-        return this.request('POST', '/chatbot/conversations/', {
-            title: title
-        });
-    }
-
-    async deleteConversation(id) {
-        return this.request('DELETE', `/chatbot/conversations/${id}/`);
-    }
-
-    async submitChatFeedback(messageId, rating, comment = '') {
-        return this.request('POST', '/chatbot/feedback/', {
-            message: messageId,
-            rating: rating,
-            comment: comment
-        });
-    }
 
     // ========================================
     // Preferences & Recommendations

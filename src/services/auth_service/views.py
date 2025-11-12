@@ -245,35 +245,47 @@ class AuthViewSet(viewsets.ViewSet):
     def connect_wallet(self, request):
         serializer = ConnectWalletSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
         wallet_address = serializer.validated_data['wallet_address'].lower()
         signature = serializer.validated_data['signature']
         network = serializer.validated_data.get('network', 'sepolia')
+        
         # Prevent wallet re-use
         if WalletConnection.objects.filter(wallet_address=wallet_address).exclude(user=request.user).exists():
             raise ConflictError("Wallet already connected to another account")
-        # Signature verification stub (needs actual Web3 code for production)
+        
+        # TODO: Add real signature verification in production
+        # from web3 import Web3
+        # w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
         # message = f"Connect wallet: {wallet_address}"
-        # signer_address = w3.eth.account.recover_message(message, signature=signature)
-        # if signer_address.lower() != wallet_address:
+        # encoded_msg = encode_defunct(text=message)
+        # recovered_address = w3.eth.account.recover_message(encoded_msg, signature=signature)
+        # if recovered_address.lower() != wallet_address:
         #     raise ValidationError("Invalid wallet signature")
+        
         wallet, created = WalletConnection.objects.update_or_create(
             user=request.user,
             defaults={
                 'wallet_address': wallet_address,
                 'network': network,
-                'is_verified': True,
+                'is_verified': True,  # Set to False in production until signature verified
                 'verification_signature': signature,
                 'last_verified_at': timezone.now()
             }
         )
+        
+        # Update user wallet address
         request.user.wallet_address = wallet_address
         request.user.save()
+        
         logger.info(f"Wallet connected: {request.user.email} - {wallet_address}")
+        
         return Response({
             'status': 'success',
             'message': 'Wallet connected successfully',
             'data': WalletConnectionSerializer(wallet).data
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def wallet_balance(self, request):

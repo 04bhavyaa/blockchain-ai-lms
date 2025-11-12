@@ -60,14 +60,20 @@ class FraudDetectionLog(models.Model):
     ]
     
     FRAUD_TYPES = [
-        ('multiple_accounts', 'Multiple Accounts'),
-        ('token_manipulation', 'Token Manipulation'),
-        ('payment_chargeback', 'Payment Chargeback'),
-        ('suspicious_login', 'Suspicious Login'),
-        ('fake_certificates', 'Fake Certificates'),
-        ('unauthorized_access', 'Unauthorized Access'),
-        ('bot_activity', 'Bot Activity'),
+    ('multiple_accounts', 'Multiple Accounts'),
+    ('token_manipulation', 'Token Manipulation'),
+    ('payment_chargeback', 'Payment Chargeback'),
+    ('suspicious_login', 'Suspicious Login'),
+    ('fake_certificates', 'Fake Certificates'),
+    ('unauthorized_access', 'Unauthorized Access'),
+    ('bot_activity', 'Bot Activity'),
+    ('brute_force', 'Brute Force Attack'),
+    ('abnormal_activity', 'Abnormal Activity'),
+    ('payment_fraud', 'Payment Fraud'),
+    ('wallet_manipulation', 'Wallet Manipulation'),
+    ('token_farming', 'Token Farming'),
     ]
+
     
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='fraud_logs')
     fraud_type = models.CharField(max_length=50, choices=FRAUD_TYPES)
@@ -84,6 +90,8 @@ class FraudDetectionLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
     
     class Meta:
         db_table = 'fraud_detection_logs'

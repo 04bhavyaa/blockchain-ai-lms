@@ -1,24 +1,330 @@
-"""
-Hybrid recommendation engine combining collaborative and content-based filtering
-"""
-
 import numpy as np
+from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
+from django.conf import settings
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from django.core.cache import cache
 from django.utils import timezone
 from datetime import timedelta
 import logging
+from src.shared.constants import RECOMMENDATION_WEIGHTS
 
 from .models import (
     UserPreference, CourseVector, UserCourseInteraction,
     RecommendationCache, RecommendationFeedback
 )
-from src.shared.constants import RECOMMENDATION_WEIGHTS
 
 logger = logging.getLogger(__name__)
 
 
+"""
+Hybrid recommendation engine with Qdrant vector search
+"""
+class QdrantRecommendationEngine:
+    """
+    Enhanced recommendation engine using Qdrant vector database
+    """
+    
+    def __init__(self, user):
+        self.user = user
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')  # 384 dimensions
+        self.qdrant_client = QdrantClient(
+            host=settings.QDRANT_HOST,
+            port=settings.QDRANT_PORT
+        )
+        self.collection_name = "course_embeddings"
+        self._ensure_collection_exists()
+    
+    def _ensure_collection_exists(self):
+        """Create Qdrant collection if it doesn't exist"""
+        try:
+            collections = self.qdrant_client.get_collections().collections
+            collection_names = [c.name for c in collections]
+            
+            if self.collection_name not in collection_names:
+                self.qdrant_client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=VectorParams(
+                        size=384,  # Dimension of all-MiniLM-L6-v2
+                        distance=Distance.COSINE
+                    )
+                )
+                logger.info(f"Created Qdrant collection: {self.collection_name}")
+        except Exception as e:
+            logger.error(f"Error ensuring collection exists: {str(e)}")
+    
+    def generate_user_profile_embedding(self):
+        """
+        Generate user profile embedding from interests and education
+        """
+        try:
+            # Get user profile data
+            profile_text = []
+            
+            # Add interests from user model
+            if hasattr(self.user, 'learning_goals') and self.user.learning_goals:
+                profile_text.append(f"Interests: {self.user.learning_goals}")
+            
+            # Add education level
+            if hasattr(self.user, 'education_level') and self.user.education_level:
+                profile_text.append(f"Education: {self.user.education_level}")
+            
+            # Get user preferences
+            try:
+                preference = UserPreference.objects.get(user=self.user)
+                if preference.preferred_categories:
+                    categories = ", ".join(preference.preferred_categories)
+                    profile_text.append(f"Preferred categories: {categories}")
+                
+                if preference.preferred_difficulty:
+                    profile_text.append(f"Skill level: {preference.preferred_difficulty}")
+                
+                if preference.learning_style:
+                    profile_text.append(f"Learning style: {preference.learning_style}")
+            except UserPreference.DoesNotExist:
+                pass
+            
+            # Combine all profile information
+            if not profile_text:
+                profile_text = ["General learner seeking knowledge"]
+            
+            combined_profile = " | ".join(profile_text)
+            logger.info(f"User profile text: {combined_profile}")
+            
+            # Generate embedding
+            embedding = self.embedding_model.encode(combined_profile)
+            return embedding.tolist()
+            
+        except Exception as e:
+            logger.error(f"Error generating user profile embedding: {str(e)}", exc_info=True)
+            return None
+    
+    def index_course_to_qdrant(self, course):
+        """
+        Index a single course to Qdrant
+        Args:
+            course: Course model instance from courses_service
+        """
+        try:
+            # Create course text for embedding
+            course_text = self._create_course_text(course)
+            
+            # Generate embedding
+            embedding = self.embedding_model.encode(course_text)
+            
+            # Create point for Qdrant
+            point = PointStruct(
+                id=course.id,
+                vector=embedding.tolist(),
+                payload={
+                    "course_id": course.id,
+                    "title": course.title,
+                    "description": course.description[:500],  # Truncate
+                    "category": course.category.name if course.category else "",
+                    "difficulty_level": course.difficulty_level,
+                    "access_type": course.access_type,
+                    "token_cost": int(course.token_cost),
+                    "price_usd": float(course.price_usd),
+                    "average_rating": float(course.average_rating),
+                    "total_enrollments": course.total_enrollments,
+                    "is_featured": course.is_featured,
+                }
+            )
+            
+            # Upsert to Qdrant
+            self.qdrant_client.upsert(
+                collection_name=self.collection_name,
+                points=[point]
+            )
+            
+            logger.info(f"Indexed course {course.id} to Qdrant")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error indexing course {course.id}: {str(e)}", exc_info=True)
+            return False
+    
+    def _create_course_text(self, course):
+        """Create searchable text representation of course"""
+        parts = [
+            f"Title: {course.title}",
+            f"Description: {course.description}",
+            f"Category: {course.category.name if course.category else 'Uncategorized'}",
+            f"Level: {course.difficulty_level}",
+        ]
+        
+        if hasattr(course, 'tags') and course.tags:
+            parts.append(f"Tags: {', '.join(course.tags)}")
+        
+        return " | ".join(parts)
+    
+    def get_recommendations(self, limit=10):
+        """
+        Get personalized recommendations using Qdrant vector search
+        """
+        cache_key = f"qdrant_recs:{self.user.id}"
+        cached_recs = cache.get(cache_key)
+        
+        if cached_recs:
+            logger.info(f"Cache hit for Qdrant recommendations: {self.user.email}")
+            return cached_recs[:limit]
+        
+        try:
+            # Generate user profile embedding
+            user_embedding = self.generate_user_profile_embedding()
+            
+            if not user_embedding:
+                logger.warning("Could not generate user embedding, using fallback")
+                return self._fallback_recommendations(limit)
+            
+            # Get already enrolled course IDs to filter out
+            enrolled_course_ids = list(
+                UserCourseInteraction.objects.filter(
+                    user=self.user,
+                    interaction_type__in=['enroll', 'complete']
+                ).values_list('course_id', flat=True)
+            )
+            
+            # Search Qdrant for similar courses
+            search_result = self.qdrant_client.search(
+                collection_name=self.collection_name,
+                query_vector=user_embedding,
+                limit=limit * 3,  # Get more to filter
+                with_payload=True
+            )
+            
+            # Filter and format results
+            recommendations = []
+            for scored_point in search_result:
+                course_id = scored_point.payload['course_id']
+                
+                # Skip enrolled courses
+                if course_id in enrolled_course_ids:
+                    continue
+                
+                recommendations.append({
+                    'course_id': course_id,
+                    'title': scored_point.payload['title'],
+                    'description': scored_point.payload['description'],
+                    'category': scored_point.payload['category'],
+                    'difficulty_level': scored_point.payload['difficulty_level'],
+                    'access_type': scored_point.payload['access_type'],
+                    'token_cost': scored_point.payload['token_cost'],
+                    'price_usd': scored_point.payload['price_usd'],
+                    'average_rating': scored_point.payload['average_rating'],
+                    'total_enrollments': scored_point.payload['total_enrollments'],
+                    'is_featured': scored_point.payload['is_featured'],
+                    'score': float(scored_point.score),
+                    'match_percentage': round(float(scored_point.score) * 100, 2)
+                })
+                
+                if len(recommendations) >= limit:
+                    break
+            
+            # Cache results
+            cache.set(cache_key, recommendations, 900)  # 15 minutes
+            
+            logger.info(f"Generated {len(recommendations)} Qdrant recommendations for {self.user.email}")
+            return recommendations
+            
+        except Exception as e:
+            logger.error(f"Error in Qdrant recommendations: {str(e)}", exc_info=True)
+            return self._fallback_recommendations(limit)
+    
+    def _fallback_recommendations(self, limit):
+        """Fallback to popular courses if Qdrant fails"""
+        try:
+            from src.services.courses_service.models import Course
+            
+            courses = Course.objects.filter(
+                status='published'
+            ).order_by('-is_featured', '-total_enrollments', '-average_rating')[:limit]
+            
+            recommendations = []
+            for course in courses:
+                recommendations.append({
+                    'course_id': course.id,
+                    'title': course.title,
+                    'description': course.description,
+                    'category': course.category.name if course.category else '',
+                    'difficulty_level': course.difficulty_level,
+                    'access_type': course.access_type,
+                    'token_cost': course.token_cost,
+                    'price_usd': float(course.price_usd),
+                    'average_rating': float(course.average_rating),
+                    'total_enrollments': course.total_enrollments,
+                    'is_featured': course.is_featured,
+                    'score': 0.5,
+                    'match_percentage': 50.0
+                })
+            
+            return recommendations
+        except Exception as e:
+            logger.error(f"Fallback also failed: {str(e)}")
+            return []
+    
+    def bulk_index_courses(self):
+        """Index all published courses to Qdrant"""
+        try:
+            from src.services.courses_service.models import Course
+            
+            courses = Course.objects.filter(status='published')
+            total = courses.count()
+            
+            logger.info(f"Starting bulk indexing of {total} courses to Qdrant...")
+            
+            points = []
+            for course in courses:
+                course_text = self._create_course_text(course)
+                embedding = self.embedding_model.encode(course_text)
+                
+                point = PointStruct(
+                    id=course.id,
+                    vector=embedding.tolist(),
+                    payload={
+                        "course_id": course.id,
+                        "title": course.title,
+                        "description": course.description[:500],
+                        "category": course.category.name if course.category else "",
+                        "difficulty_level": course.difficulty_level,
+                        "access_type": course.access_type,
+                        "token_cost": int(course.token_cost),
+                        "price_usd": float(course.price_usd),
+                        "average_rating": float(course.average_rating),
+                        "total_enrollments": course.total_enrollments,
+                        "is_featured": course.is_featured,
+                    }
+                )
+                points.append(point)
+                
+                # Batch upsert every 100 courses
+                if len(points) >= 100:
+                    self.qdrant_client.upsert(
+                        collection_name=self.collection_name,
+                        points=points
+                    )
+                    logger.info(f"Indexed batch of {len(points)} courses")
+                    points = []
+            
+            # Upsert remaining
+            if points:
+                self.qdrant_client.upsert(
+                    collection_name=self.collection_name,
+                    points=points
+                )
+            
+            logger.info(f"Successfully indexed {total} courses to Qdrant")
+            return {"status": "success", "indexed": total}
+            
+        except Exception as e:
+            logger.error(f"Error bulk indexing courses: {str(e)}", exc_info=True)
+            return {"status": "error", "message": str(e)}
+
+# """
+# Hybrid recommendation engine combining collaborative and content-based filtering
+# """
 class HybridRecommendationEngine:
     """
     Hybrid recommendation engine combining:

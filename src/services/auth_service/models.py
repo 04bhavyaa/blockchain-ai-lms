@@ -35,7 +35,7 @@ class EmailVerificationToken(models.Model):
     @classmethod
     def create_token(cls, user, expiration_hours=24):
         token = secrets.token_urlsafe(32)
-        expires_at = timezone.now() + timezone.timedelta(hours=expiration_hours)
+        expires_at = timezone.now() + timedelta(hours=expiration_hours)
         return cls.objects.create(user=user, token=token, expires_at=expires_at)
 
 class PasswordResetToken(models.Model):

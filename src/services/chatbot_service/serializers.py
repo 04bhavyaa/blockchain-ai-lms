@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Conversation, ChatMessage, ChatbotFeedback, FAQ, KnowledgeBase, ConversationContext
+    Conversation, ChatMessage, FAQ
 )
 
 class ChatMessageSerializer(serializers.ModelSerializer):
@@ -43,17 +43,17 @@ class SendMessageSerializer(serializers.Serializer):
     conversation_id = serializers.IntegerField(required=False, allow_null=True)
     session_id = serializers.CharField(max_length=128, required=False, allow_blank=True)
 
-class ChatbotFeedbackSerializer(serializers.ModelSerializer):
-    """Chatbot feedback serializer"""
-    class Meta:
-        model = ChatbotFeedback
-        fields = [
-            'id', 'message', 'rating', 'comment',
-            'blockchain_event_tx_hash', 'last_blockchain_status', 'created_at'
-        ]
-        read_only_fields = [
-            'id', 'created_at', 'blockchain_event_tx_hash', 'last_blockchain_status'
-        ]
+# class ChatbotFeedbackSerializer(serializers.ModelSerializer):
+#     """Chatbot feedback serializer"""
+#     class Meta:
+#         model = ChatbotFeedback
+#         fields = [
+#             'id', 'message', 'rating', 'comment',
+#             'blockchain_event_tx_hash', 'last_blockchain_status', 'created_at'
+#         ]
+#         read_only_fields = [
+#             'id', 'created_at', 'blockchain_event_tx_hash', 'last_blockchain_status'
+#         ]
 
 class FeedbackRequestSerializer(serializers.Serializer):
     """Submit feedback request"""
@@ -73,27 +73,27 @@ class FAQSerializer(serializers.ModelSerializer):
             'id', 'views', 'helpful_count', 'blockchain_event_tx_hash', 'last_blockchain_status'
         ]
 
-class KnowledgeBaseSerializer(serializers.ModelSerializer):
-    """Knowledge base serializer"""
-    class Meta:
-        model = KnowledgeBase
-        fields = [
-            'id', 'title', 'content', 'source', 'doc_type',
-            'is_active', 'embedding_vector', 'blockchain_event_tx_hash', 'last_blockchain_status',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = [
-            'id', 'created_at', 'updated_at', 'blockchain_event_tx_hash', 'last_blockchain_status'
-        ]
+# class KnowledgeBaseSerializer(serializers.ModelSerializer):
+#     """Knowledge base serializer"""
+#     class Meta:
+#         model = KnowledgeBase
+#         fields = [
+#             'id', 'title', 'content', 'source', 'doc_type',
+#             'is_active', 'embedding_vector', 'blockchain_event_tx_hash', 'last_blockchain_status',
+#             'created_at', 'updated_at'
+#         ]
+#         read_only_fields = [
+#             'id', 'created_at', 'updated_at', 'blockchain_event_tx_hash', 'last_blockchain_status'
+#         ]
 
-class ConversationContextSerializer(serializers.ModelSerializer):
-    """Conversation context serializer"""
-    class Meta:
-        model = ConversationContext
-        fields = [
-            'id', 'retrieved_docs', 'conversation_summary', 'user_intent', 'last_topic',
-            'turn_count', 'blockchain_event_tx_hash', 'last_blockchain_status', 'updated_at'
-        ]
-        read_only_fields = [
-            'id', 'updated_at', 'blockchain_event_tx_hash', 'last_blockchain_status'
-        ]
+# class ConversationContextSerializer(serializers.ModelSerializer):
+#     """Conversation context serializer"""
+#     class Meta:
+#         model = ConversationContext
+#         fields = [
+#             'id', 'retrieved_docs', 'conversation_summary', 'user_intent', 'last_topic',
+#             'turn_count', 'blockchain_event_tx_hash', 'last_blockchain_status', 'updated_at'
+#         ]
+#         read_only_fields = [
+#             'id', 'updated_at', 'blockchain_event_tx_hash', 'last_blockchain_status'
+#         ]

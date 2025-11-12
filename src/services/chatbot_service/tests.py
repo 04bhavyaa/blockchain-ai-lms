@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from .models import (
-    Conversation, ChatMessage, ChatbotFeedback, FAQ, KnowledgeBase, ConversationContext
+    Conversation, ChatMessage, FAQ
 )
 import uuid
 
@@ -20,18 +20,18 @@ class ChatbotServiceTests(TestCase):
             answer="Visit your profile and click 'Reset Password'.",
             is_active=True,
         )
-        self.kb = KnowledgeBase.objects.create(
-            title="Intro to Blockchain",
-            content="Blockchain is a decentralized ledger...",
-            source="Course Material",
-            doc_type="course",
-            is_active=True,
-        )
+        # self.kb = KnowledgeBase.objects.create(
+        #     title="Intro to Blockchain",
+        #     content="Blockchain is a decentralized ledger...",
+        #     source="Course Material",
+        #     doc_type="course",
+        #     is_active=True,
+        # )
         self.session_id = str(uuid.uuid4())
         self.convo = Conversation.objects.create(
             user=self.user, session_id=self.session_id, title="Test Chat", description="Test Desc"
         )
-        ConversationContext.objects.create(conversation=self.convo)
+        # ConversationContext.objects.create(conversation=self.convo)
 
     def test_conversation_create_and_archive(self):
         url = reverse("conversations-list")

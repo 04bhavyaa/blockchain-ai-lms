@@ -1,70 +1,236 @@
-/*
- * Contract interaction helpers using ethers v5 (UMD)
- * Exposes simple functions: approveERC20, transferERC20, mintNFT
- * Requires ethers to be loaded on the page via CDN: https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js
+/**
+ * Smart Contract Interaction Module
+ * Handles all blockchain interactions using ethers.js v6
+ * Requires: ethers.js v6 loaded via CDN
+ * <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
  */
 
-async function loadAbi(name) {
-    const resp = await fetch(`/abis/${name}.json`);
-    if (!resp.ok) throw new Error('ABI not found: ' + name);
-    return resp.json();
-}
-
+/**
+ * Get ethers provider and signer from MetaMask
+ */
 async function getProviderAndSigner() {
-    if (!window.ethereum) throw new Error('MetaMask is not available');
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    // Request accounts if not already granted
-    await provider.send('eth_requestAccounts', []);
-    const signer = provider.getSigner();
+    if (!window.ethereum) {
+        throw new Error('MetaMask not installed. Please install MetaMask extension.');
+    }
+    
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []); // Request accounts
+    const signer = await provider.getSigner();
+    
     return { provider, signer };
 }
 
-async function approveERC20(tokenAddress, abiName, spender, amount) {
-    const abiJson = await loadAbi(abiName);
-    const abi = abiJson.abi || abiJson;
-    const { signer } = await getProviderAndSigner();
-    const token = new ethers.Contract(tokenAddress, abi, signer);
-
-    // Try to read decimals, fall back to 18
-    let decimals = 18;
-    try { decimals = await token.decimals(); } catch (e) { /* ignore */ }
-    const amountParsed = ethers.utils.parseUnits(String(amount), decimals);
-
-    const tx = await token.approve(spender, amountParsed);
-    return tx; // caller should await tx.wait() for receipt
-}
-
-async function transferERC20(tokenAddress, abiName, to, amount) {
-    const abiJson = await loadAbi(abiName);
-    const abi = abiJson.abi || abiJson;
-    const { signer } = await getProviderAndSigner();
-    const token = new ethers.Contract(tokenAddress, abi, signer);
-    let decimals = 18;
-    try { decimals = await token.decimals(); } catch (e) { /* ignore */ }
-    const amountParsed = ethers.utils.parseUnits(String(amount), decimals);
-    const tx = await token.transfer(to, amountParsed);
-    return tx;
-}
-
-async function mintNFT(nftAddress, abiName, to, tokenURI) {
-    const abiJson = await loadAbi(abiName);
-    const abi = abiJson.abi || abiJson;
-    const { signer } = await getProviderAndSigner();
-    const nft = new ethers.Contract(nftAddress, abi, signer);
-    // Assume a mint(to, tokenURI) or safeMint variant exists; this will fail if ABI differs
-    if (nft.mint) {
-        return nft.mint(to, tokenURI);
+/**
+ * Check if on correct network (Hardhat localhost)
+ */
+async function checkNetwork() {
+    try {
+        const { provider } = await getProviderAndSigner();
+        const network = await provider.getNetwork();
+        const chainId = '0x' + network.chainId.toString(16);
+        
+        if (chainId !== window.WEB3_CONFIG.NETWORK.chainId) {
+            throw new Error(`Wrong network. Please switch to ${window.WEB3_CONFIG.NETWORK.name}`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Network check failed:', error);
+        throw error;
     }
-    if (nft.safeMint) {
-        return nft.safeMint(to, tokenURI);
-    }
-    throw new Error('NFT contract does not expose mint/safeMint');
 }
 
-// Expose helpers globally
+/**
+ * Get user's token balance
+ */
+async function getTokenBalance(userAddress) {
+    try {
+        const { provider } = await getProviderAndSigner();
+        const tokenContract = new ethers.Contract(
+            window.WEB3_CONFIG.CONTRACTS.TOKEN.address,
+            window.ERC20_ABI,
+            provider
+        );
+        
+        const balance = await tokenContract.balanceOf(userAddress);
+        const decimals = await tokenContract.decimals();
+        
+        return ethers.formatUnits(balance, decimals);
+    } catch (error) {
+        console.error('Error getting token balance:', error);
+        return '0';
+    }
+}
+
+/**
+ * Check token allowance
+ */
+async function checkAllowance(ownerAddress, spenderAddress) {
+    try {
+        const { provider } = await getProviderAndSigner();
+        const tokenContract = new ethers.Contract(
+            window.WEB3_CONFIG.CONTRACTS.TOKEN.address,
+            window.ERC20_ABI,
+            provider
+        );
+        
+        const allowance = await tokenContract.allowance(ownerAddress, spenderAddress);
+        const decimals = await tokenContract.decimals();
+        
+        return ethers.formatUnits(allowance, decimals);
+    } catch (error) {
+        console.error('Error checking allowance:', error);
+        return '0';
+    }
+}
+
+/**
+ * Approve ERC20 tokens for spending
+ * @param {string} spenderAddress - Address that can spend tokens
+ * @param {string} amount - Amount to approve (in token units, e.g., "100")
+ * @returns {Promise<object>} Transaction receipt
+ */
+async function approveERC20(spenderAddress, amount) {
+    try {
+        await checkNetwork();
+        const { signer } = await getProviderAndSigner();
+        
+        const tokenContract = new ethers.Contract(
+            window.WEB3_CONFIG.CONTRACTS.TOKEN.address,
+            window.ERC20_ABI,
+            signer
+        );
+        
+        // Get decimals
+        const decimals = await tokenContract.decimals();
+        
+        // Parse amount to Wei equivalent
+        const amountWei = ethers.parseUnits(amount.toString(), decimals);
+        
+        console.log(`Approving ${amount} tokens (${amountWei.toString()} wei) for ${spenderAddress}`);
+        
+        // Send transaction
+        const tx = await tokenContract.approve(spenderAddress, amountWei);
+        console.log('Approval transaction sent:', tx.hash);
+        
+        // Wait for confirmation
+        const receipt = await tx.wait();
+        console.log('Approval confirmed:', receipt);
+        
+        return receipt;
+    } catch (error) {
+        console.error('Error approving tokens:', error);
+        throw error;
+    }
+}
+
+/**
+ * Transfer ERC20 tokens
+ * @param {string} toAddress - Recipient address
+ * @param {string} amount - Amount to transfer
+ * @returns {Promise<object>} Transaction receipt
+ */
+async function transferERC20(toAddress, amount) {
+    try {
+        await checkNetwork();
+        const { signer } = await getProviderAndSigner();
+        
+        const tokenContract = new ethers.Contract(
+            window.WEB3_CONFIG.CONTRACTS.TOKEN.address,
+            window.ERC20_ABI,
+            signer
+        );
+        
+        const decimals = await tokenContract.decimals();
+        const amountWei = ethers.parseUnits(amount.toString(), decimals);
+        
+        const tx = await tokenContract.transfer(toAddress, amountWei);
+        const receipt = await tx.wait();
+        
+        return receipt;
+    } catch (error) {
+        console.error('Error transferring tokens:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get user's certificate NFTs
+ * @param {string} userAddress - User's wallet address
+ * @returns {Promise<number>} Number of certificates owned
+ */
+async function getCertificateBalance(userAddress) {
+    try {
+        const { provider } = await getProviderAndSigner();
+        const certificateContract = new ethers.Contract(
+            window.WEB3_CONFIG.CONTRACTS.CERTIFICATE.address,
+            window.ERC721_ABI,
+            provider
+        );
+        
+        const balance = await certificateContract.balanceOf(userAddress);
+        return balance.toString();
+    } catch (error) {
+        console.error('Error getting certificate balance:', error);
+        return '0';
+    }
+}
+
+/**
+ * Add Hardhat localhost network to MetaMask
+ */
+async function addHardhatNetwork() {
+    try {
+        await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+                chainId: window.WEB3_CONFIG.NETWORK.chainId,
+                chainName: window.WEB3_CONFIG.NETWORK.name,
+                nativeCurrency: window.WEB3_CONFIG.NETWORK.currency,
+                rpcUrls: [window.WEB3_CONFIG.NETWORK.rpcUrl]
+            }]
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('Error adding network:', error);
+        throw error;
+    }
+}
+
+/**
+ * Switch to Hardhat localhost network
+ */
+async function switchToHardhatNetwork() {
+    try {
+        await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: window.WEB3_CONFIG.NETWORK.chainId }],
+        });
+        
+        return true;
+    } catch (error) {
+        // Network not added, try adding it
+        if (error.code === 4902) {
+            return await addHardhatNetwork();
+        }
+        
+        console.error('Error switching network:', error);
+        throw error;
+    }
+}
+
+// Export all functions to window.contracts
 window.contracts = {
-    loadAbi,
+    getProviderAndSigner,
+    checkNetwork,
+    getTokenBalance,
+    checkAllowance,
     approveERC20,
     transferERC20,
-    mintNFT,
+    getCertificateBalance,
+    addHardhatNetwork,
+    switchToHardhatNetwork
 };
+
+console.log('✅ Contracts module loaded');

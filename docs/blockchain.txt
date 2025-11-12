@@ -1,0 +1,38 @@
+ERC20 Features:
+
+    Simple OpenZeppelin ERC20
+    1,000,000 tokens minted at deployment
+    All tokens go to deployer (Account #0 on Hardhat)
+    18 decimals (standard)
+
+ERC721 Features:
+
+    Admin-only minting (deployer)
+    Auto-incrementing token IDs
+    URI storage for IPFS metadata
+    OpenZeppelin base
+
+AP2 Features:
+
+    Escrow pattern (buyer deposits, agent executes)
+    Agent whitelist (only authorized addresses)
+    Event-driven (for AP2 agent monitoring)
+    Emergency withdrawal safety (30-day timeout)
+    Per-purchase tracking with unique IDs
+
+Demo Flow:
+
+1. User connects MetaMask (Account #1: 10,000 tokens)
+2. User browses course (e.g., "Blockchain Basics" - 100 tokens)
+3. User clicks "Purchase with Tokens"
+4. Backend: POST /payment/request-approval/
+5. Frontend: MetaMask approval popup
+6. User approves 100 token spend
+7. User confirms purchase
+8. Backend: POST /payment/confirm-payment/
+9. Backend verifies tx, creates enrollment
+10. User completes course
+11. Backend: POST /certificates/issue-certificate/
+12. Admin mints NFT to user's wallet
+13. User receives certificate (visible in MetaMask & OpenSea)
+

@@ -17,6 +17,7 @@ from .web3.client import Web3Client
 from src.shared.exceptions import ValidationError, BlockchainError, ResourceNotFoundError
 from src.services.courses_service.models import Enrollment, Course
 from django.conf import settings
+from .config import TOKEN_CONTRACT_ADDRESS, TREASURY_ADDRESS
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +38,10 @@ class OnChainPaymentViewSet(viewsets.ViewSet):
         if not request.user.wallet_address:
             raise ValidationError("Wallet not connected. Connect MetaMask first.")
         token_contract = {
-            "contract_address": settings.ERC20_CONTRACT_ADDRESS,
+            "contract_address": TOKEN_CONTRACT_ADDRESS,
             "contract_abi": [] # Use your local deploy and JSON ABI for localhost simulation
         }
-        platform_treasury = getattr(settings, 'PLATFORM_TREASURY_ADDRESS')
+        platform_treasury = TREASURY_ADDRESS
         ApprovalRequest.objects.create(
             user=request.user,
             course_id=course_id,

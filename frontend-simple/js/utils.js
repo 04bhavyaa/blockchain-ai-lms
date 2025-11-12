@@ -179,6 +179,16 @@ function showAlert(type, message, duration = 5000) {
     }, duration);
 }
 
+// Require authentication for certain actions/pages
+function requireAuth() {
+    if (!isAuthenticated()) {
+        showAlert('error', 'Please login to access this page');
+        redirectTo('login.html');
+        return false;
+    }
+    return true;
+}
+
 // Make functions available globally
 window.utils = {
     setToken,
@@ -189,6 +199,7 @@ window.utils = {
     setRefreshToken,
     getRefreshToken,
     isAuthenticated,
+    requireAuth,
     redirectTo,
     getQueryParam,
     showError,
