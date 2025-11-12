@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="/index.html">
+                    <h2>🎓 Blockchain LMS</h2>
+                </a>
+            </div>
+            <div class="navbar-menu">
+                <a href="/pages/dashboard/dashboard.html" class="nav-link">Dashboard</a>
+                <a href="/pages/courses/courses.html" class="nav-link">Browse Courses</a>
+                <a href="/pages/user/profile.html" class="nav-link">Profile</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="chatbot-container">
+        <h1 class="text-center">🤖 AI Learning Assistant</h1>
+        <p class="text-center mb-xl">Ask me anything about courses, lessons, or learning tips!</p>
+
+        <!-- Chat Messages -->
+        <div id="chatMessages" class="chat-messages">
+            <div class="chat-message bot">
+                <div class="chat-bubble">
+                    Hi! I'm your AI learning assistant. How can I help you today?
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <input 
+                type="text" 
+                id="chatInput" 
+                class="form-control" 
+                placeholder="Type your message..."
+                autocomplete="off">
+            <button id="sendBtn" class="btn btn-primary">Send</button>
+            <button id="clearBtn" class="btn btn-outline">Clear</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AuthService } from '/assets/js/services/auth.js';
+        import { ChatbotService } from '/assets/js/services/chatbot.js';
+        import { showAlert } from '/assets/js/utils/utils.js';
+
+        if (!AuthService.requireAuth()) {
+            window.location.href = '/pages/auth/login.html';
+        }
+
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let conversationId = null;
+
+        // Send message
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message to UI
+            addMessage('user', message);
+            chatInput.value = '';
+
+            // Disable input while processing
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Thinking...';
+
+            try {
+                // Send to backend
+                const response = await ChatbotService.sendMessage(message, conversationId);
+                
+                // Update conversation ID
+                if (response.conversation_id) {
+                    conversationId = response.conversation_id;
+                }
+
+                // Add bot response to UI
+                addMessage('bot', response.response);
+            } catch (error) {
+                console.error('Send message error:', error);
+                addMessage('bot', 'Sorry, I encountered an error. Please try again.');
+            } finally {
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+                chatInput.focus();
+            }
+        }
+
+        // Add message to UI
+        function addMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'chat-bubble';
+            bubbleDiv.textContent = text;
+            
+            messageDiv.appendChild(bubbleDiv);
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Clear chat
+        async function clearChat() {
+            if (!confirm('Are you sure you want to clear the chat history?')) return;
+
+            try {
+                await ChatbotService.clearHistory(conversationId);
+                chatMessages.innerHTML = `
+                    <div class="chat-message bot">
+                        <div class="chat-bubble">
+                            Chat cleared! How can I help you?
+                        </div>
+                    </div>
+                `;
+                conversationId = null;
+            } catch (error) {
+                console.error('Clear chat error:', error);
+            }
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        clearBtn.addEventListener('click', clearChat);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Load chat history on page load
+        async function loadHistory() {
+            try {
+                const history = await ChatbotService.getChatHistory();
+                if (history && history.length > 0) {
+                    chatMessages.innerHTML = '';
+                    history.forEach(msg => {
+                        addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
+                    });
+                }
+            } catch (error) {
+                console.error('Load history error:', error);
+            }
+        }
+
+        loadHistory();
+    </script>
+</body>
+</html>

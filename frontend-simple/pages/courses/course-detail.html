@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Detail - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="/index.html">
+                    <h2>🎓 Blockchain LMS</h2>
+                </a>
+            </div>
+            <div class="navbar-menu">
+                <a href="/pages/dashboard/dashboard.html" class="nav-link">Dashboard</a>
+                <a href="/pages/courses/courses.html" class="nav-link">Browse Courses</a>
+                <a href="/pages/user/profile.html" class="nav-link">Profile</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="padding: 2rem 1.5rem;">
+        <div id="courseContent">
+            <!-- Course Header -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                <div>
+                    <img id="courseImage" src="" alt="Course" style="width: 100%; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+
+                <div>
+                    <h1 id="courseTitle">Course Title</h1>
+                    <p id="courseDescription">Course description...</p>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>👨‍🏫 Instructor:</strong></p>
+                                <p id="courseInstructor">Instructor</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>📊 Level:</strong></p>
+                                <p id="courseLevel">Beginner</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>⏱️ Duration:</strong></p>
+                                <p id="courseDuration">5 hours</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>📚 Lessons:</strong></p>
+                                <p id="totalLessons">10</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>👥 Students:</strong></p>
+                                <p id="enrolledCount">100</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>💰 Price:</strong></p>
+                                <p id="coursePrice">Free</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                        <button id="enrollBtn" class="btn btn-primary btn-lg">Enroll Now</button>
+                        <button id="startLearningBtn" class="btn btn-success btn-lg hidden">Start Learning</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Lessons (if enrolled) -->
+            <div id="lessonsContainer"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/assets/js/pages/course-detail.js"></script>
+</body>
+</html>

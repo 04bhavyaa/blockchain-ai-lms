@@ -3,72 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blockchain-Powered LMS</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Blockchain AI LMS - Learn, Earn, Own</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
-    <div class="navbar">
-        <div class="navbar-content">
-            <a href="index.html" class="navbar-brand">🎓 Blockchain LMS</a>
-            <div class="navbar-links">
-                <a href="courses.html" class="navbar-link">Courses</a>
-                <a href="login.html" class="navbar-link">Login</a>
-                <a href="register.html" class="navbar-link btn btn-primary">Get Started</a>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="/index.html">
+                    <h2>🎓 Blockchain LMS</h2>
+                </a>
+            </div>
+            <div class="navbar-menu">
+                <a href="/pages/courses/courses.html" class="nav-link">Browse Courses</a>
+                <a href="/pages/auth/login.html" class="btn btn-outline">Login</a>
+                <a href="/pages/auth/register.html" class="btn btn-primary">Get Started</a>
             </div>
         </div>
-    </div>
+    </nav>
 
-    <div class="hero-section">
+    <!-- Hero Section -->
+    <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <h1 class="hero-title">Learn with Blockchain-Powered Certificates</h1>
-                <p class="hero-subtitle">Token-gated courses, NFT certificates, and AI-powered learning</p>
+                <h1 class="hero-title">Learn. Earn. Own Your Education.</h1>
+                <p class="hero-subtitle">
+                    The first blockchain-powered learning platform with AI recommendations. 
+                    Earn tokens, get certificates as NFTs, and own your learning journey.
+                </p>
                 <div class="hero-cta">
-                    <a href="register.html" class="btn btn-primary btn-lg">Start Learning</a>
-                    <a href="courses.html" class="btn btn-secondary btn-lg">Browse Courses</a>
+                    <a href="/pages/auth/register.html" class="btn btn-primary btn-lg">Start Learning Free</a>
+                    <a href="/pages/courses/courses.html" class="btn btn-outline btn-lg">Explore Courses</a>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="container">
-        <div class="section">
-            <h2 class="text-center">Why Choose Our Platform?</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">🔗</div>
-                    <div class="stat-content">
-                        <h3>Token-Gated Access</h3>
-                        <p>Purchase courses with crypto tokens</p>
-                    </div>
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose Our Platform?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>AI-Powered Recommendations</h3>
+                    <p>Get personalized course suggestions based on your goals and learning style using advanced AI algorithms.</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🏆</div>
-                    <div class="stat-content">
-                        <h3>NFT Certificates</h3>
-                        <p>Verifiable on-chain credentials</p>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <h3>Earn Crypto Tokens</h3>
+                    <p>Complete lessons and earn LMS tokens. Use them for premium courses or trade them on exchanges.</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🤖</div>
-                    <div class="stat-content">
-                        <h3>AI Assistant</h3>
-                        <p>24/7 intelligent learning support</p>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3>NFT Certificates</h3>
+                    <p>Receive verifiable NFT certificates stored on blockchain. Prove your skills to employers worldwide.</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⚡</div>
-                    <div class="stat-content">
-                        <h3>Instant Enrollment</h3>
-                        <p>Auto-enrollment via smart contracts</p>
-                    </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI Chatbot Assistant</h3>
+                    <p>24/7 learning support with our AI chatbot. Get instant answers about courses, concepts, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Web3 Wallet Integration</h3>
+                    <p>Connect MetaMask or other wallets. Manage tokens and NFTs seamlessly within the platform.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Track Your Progress</h3>
+                    <p>Detailed analytics and progress tracking. See your learning journey visualized in real-time.</p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div id="alert-container"></div>
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Transform Your Learning?</h2>
+            <p>Join thousands of learners earning while they learn</p>
+            <a href="/pages/auth/register.html" class="btn btn-primary btn-lg">Create Free Account</a>
+        </div>
+    </section>
 
-    <script src="js/utils.js"></script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Blockchain AI LMS. Built with Django & Web3.</p>
+        </div>
+    </footer>
 </body>
 </html>

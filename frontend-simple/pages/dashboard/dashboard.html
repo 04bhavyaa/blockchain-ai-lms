@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🎓 LMS</h2>
+        <nav class="sidebar-nav">
+            <a href="/pages/dashboard/dashboard.html" class="sidebar-link active">
+                📊 Dashboard
+            </a>
+            <a href="/pages/courses/courses.html" class="sidebar-link">
+                📚 Browse Courses
+            </a>
+            <a href="/pages/courses/my-courses.html" class="sidebar-link">
+                🎯 My Courses
+            </a>
+            <a href="/pages/chatbot/chatbot.html" class="sidebar-link">
+                🤖 AI Chatbot
+            </a>
+            <a href="/pages/user/profile.html" class="sidebar-link">
+                👤 Profile
+            </a>
+            <a href="#" id="logoutBtn" class="sidebar-link">
+                🚪 Logout
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="container">
+                <div class="dashboard-welcome">
+                    <h1>Welcome back, <span id="userName">User</span>! 👋</h1>
+                    <p>Continue your learning journey</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div class="container">
+            <!-- Statistics Cards -->
+            <div id="statsContainer" class="dashboard-stats">
+                <div class="stat-card">
+                    <h3 id="enrolledCount">0</h3>
+                    <p>Enrolled Courses</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="completedCount">0</h3>
+                    <p>Completed Courses</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="tokenBalance">0</h3>
+                    <p>LMS Tokens</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalLessons">0</h3>
+                    <p>Total Lessons</p>
+                </div>
+            </div>
+
+            <!-- Enrolled Courses -->
+            <section class="mt-xl">
+                <h2>My Learning</h2>
+                <div id="coursesContainer">
+                    <div id="enrolledCourses" class="course-grid mt-lg"></div>
+                </div>
+            </section>
+
+            <!-- Recommended Courses -->
+            <section class="mt-xl">
+                <h2>Recommended for You</h2>
+                <div id="recommendedCourses" class="course-grid mt-lg"></div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module" src="/assets/js/pages/dashboard.js"></script>
+</body>
+</html>

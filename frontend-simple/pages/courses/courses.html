@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Courses - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="/index.html">
+                    <h2>🎓 Blockchain LMS</h2>
+                </a>
+            </div>
+            <div class="navbar-menu">
+                <a href="/pages/dashboard/dashboard.html" class="nav-link">Dashboard</a>
+                <a href="/pages/chatbot/chatbot.html" class="nav-link">AI Assistant</a>
+                <a href="/pages/user/profile.html" class="nav-link">Profile</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="padding: 2rem 1.5rem;">
+        <!-- Page Header -->
+        <div class="text-center mb-xl">
+            <h1>Browse All Courses</h1>
+            <p>Discover courses and start learning today</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-xl">
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="form-control" 
+                            placeholder="Search courses...">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select id="categoryFilter" class="form-control">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select id="levelFilter" class="form-control">
+                            <option value="">All Levels</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select id="priceFilter" class="form-control">
+                            <option value="">All Prices</option>
+                            <option value="free">Free</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+
+                    <button id="clearFilters" class="btn btn-outline">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses Grid -->
+        <div id="coursesGrid" class="course-grid"></div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="text-center mt-xl" style="display: flex; gap: 1rem; justify-content: center; align-items: center;"></div>
+    </div>
+
+    <script type="module" src="/assets/js/pages/courses.js"></script>
+</body>
+</html>

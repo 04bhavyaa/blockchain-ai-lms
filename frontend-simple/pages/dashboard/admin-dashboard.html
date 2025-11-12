@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Blockchain AI LMS</title>
+    <link rel="stylesheet" href="/assets/css/base.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🎓 Admin Panel</h2>
+        <nav class="sidebar-nav">
+            <a href="/pages/dashboard/admin-dashboard.html" class="sidebar-link active">
+                📊 Admin Dashboard
+            </a>
+            <a href="/pages/dashboard/dashboard.html" class="sidebar-link">
+                👤 User Dashboard
+            </a>
+            <a href="/pages/courses/courses.html" class="sidebar-link">
+                📚 Courses
+            </a>
+            <a href="#" id="logoutBtn" class="sidebar-link">
+                🚪 Logout
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h1>Admin Dashboard</h1>
+
+            <div id="adminContent">
+                <!-- Statistics -->
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalCourses">0</h3>
+                        <p>Total Courses</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalEnrollments">0</h3>
+                        <p>Total Enrollments</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalRevenue">$0</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+
+                <!-- Recent Users -->
+                <section class="mt-xl">
+                    <h2>Recent Users</h2>
+                    <div id="recentUsers" class="mt-lg"></div>
+                </section>
+
+                <!-- Recent Enrollments -->
+                <section class="mt-xl">
+                    <h2>Recent Enrollments</h2>
+                    <div id="recentEnrollments" class="mt-lg"></div>
+                </section>
+
+                <!-- Fraud Alerts -->
+                <section class="mt-xl">
+                    <h2>Fraud Detection Alerts</h2>
+                    <div id="fraudAlerts" class="mt-lg"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/assets/js/pages/admin-dashboard.js"></script>
+</body>
+</html>

@@ -55,7 +55,7 @@ class LoginAttemptAdmin(admin.ModelAdmin):
     list_display = ['user', 'email', 'ip_address', 'status_colored', 'attempted_at']
     list_filter = ['status', 'attempted_at']
     search_fields = ['user__email', 'email', 'ip_address']
-    readonly_fields = ['attempted_at', 'failure_reason']
+    readonly_fields = ['attempted_at']
     date_hierarchy = 'attempted_at'
     
     @admin.display(description='Status')
